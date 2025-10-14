@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="HotKlick - Interaktive Lern-App mit Hotspots">
+    <title>HotKlick - Interaktive Lern-App</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- App Header -->
+    <div class="app-header">
+        <div class="app-title">HotKlick</div>
+        <div class="header-actions">
+            <button class="btn-icon" id="btnBack" style="display: none;" title="Zurück">←</button>
+            <button class="btn-icon" id="btnMenu" title="Menü">⋮</button>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Home Screen -->
+        <div class="screen active" id="homeScreen">
+            <div class="home-screen">
+                <h2>Meine Übungen</h2>
+                <div class="exercise-list" id="exerciseList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>Noch keine Übungen vorhanden</p>
+                        <p style="font-size: 14px;">Erstelle deine erste Übung mit dem + Button</p>
+                    </div>
+                </div>
+            </div>
+            <button class="fab" id="btnNewExercise" title="Neue Übung">+</button>
+        </div>
+
+        <!-- Canvas Screen (Editor/Practice) -->
+        <div class="screen" id="canvasScreen">
+            <div class="canvas-toolbar">
+                <div class="mode-toggle">
+                    <button id="btnEditMode" class="active">Editiermodus</button>
+                    <button id="btnPracticeMode">Übungsmodus</button>
+                    <button id="btnDeepeningMode">Vertiefungsmodus</button>
+                </div>
+                <input type="text" id="exerciseName" placeholder="Übungsname..." style="flex: 1; margin: 0;">
+                <button class="btn btn-primary" id="btnSave">Speichern</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="drawingCanvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Exercise Dialog -->
+    <div class="modal" id="newExerciseModal">
+        <div class="modal-content">
+            <div class="modal-header">Neue Übung erstellen</div>
+            <label for="newExerciseName">Übungsname</label>
+            <input type="text" id="newExerciseName" placeholder="z.B. Anatomie Herz">
+            
+            <label for="exerciseImage">Bild auswählen</label>
+            <input type="file" id="exerciseImage" accept="image/*">
+            
+            <div class="modal-actions">
+                <button class="btn" id="btnCancelNewExercise">Abbrechen</button>
+                <button class="btn btn-primary" id="btnCreateExercise">Erstellen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Dialog -->
+    <div class="modal" id="textModal">
+        <div class="modal-content">
+            <div class="modal-header">Hotspot bearbeiten</div>
+            <label for="hotspotLabel">Label</label>
+            <input type="text" id="hotspotLabel" placeholder="z.B. A1">
+            
+            <label for="hotspotText">Text</label>
+            <textarea id="hotspotText" placeholder="Beschreibung des Hotspots..."></textarea>
+            
+            <div class="modal-actions">
+                <button class="btn" id="btnCancelText">Abbrechen</button>
+                <button class="btn btn-primary" id="btnSaveText">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Dialog -->
+    <div class="modal" id="audioModal">
+        <div class="modal-content">
+            <div class="modal-header">Audio aufnehmen</div>
+            <div style="text-align: center; padding: 20px;">
+                <button class="btn btn-primary" id="btnStartRecording">🎤 Aufnahme starten</button>
+                <button class="btn btn-danger" id="btnStopRecording" style="display: none;">⏹ Stoppen</button>
+                <div id="recordingTime" style="margin-top: 12px; font-size: 18px; display: none;">00:00</div>
+                <audio id="audioPreview" controls style="width: 100%; margin-top: 12px; display: none;"></audio>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" id="btnCancelAudio">Abbrechen</button>
+                <button class="btn btn-primary" id="btnSaveAudio">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

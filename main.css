@@ -1,0 +1,498 @@
+/* ============================================
+   HotKlick Web-App - Main Styles
+   ============================================ */
+
+/* Reset & Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Colors */
+    --primary: #2196F3;
+    --primary-dark: #1976D2;
+    --secondary: #FF9800;
+    --success: #4CAF50;
+    --danger: #F44336;
+    --warning: #FFC107;
+    --dark: #212121;
+    --light: #F5F5F5;
+    --gray: #757575;
+    --white: #FFFFFF;
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-xxl: 24px;
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.15);
+    --shadow-lg: 0 6px 12px rgba(0,0,0,0.2);
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-medium: 0.3s ease;
+}
+
+body {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--light);
+    color: var(--dark);
+    overflow: hidden;
+    line-height: 1.5;
+}
+
+/* ============================================
+   App Header
+   ============================================ */
+.app-header {
+    background-color: var(--primary);
+    color: var(--white);
+    padding: var(--spacing-md) var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+}
+
+.app-title {
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* ============================================
+   Main Container
+   ============================================ */
+.app-container {
+    height: calc(100vh - 56px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   Screen Management
+   ============================================ */
+.screen {
+    display: none;
+    flex: 1;
+    overflow: auto;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   Home Screen
+   ============================================ */
+.home-screen {
+    padding: var(--spacing-xl);
+}
+
+.home-screen h2 {
+    margin-bottom: var(--spacing-lg);
+    font-size: 24px;
+    font-weight: 500;
+}
+
+.exercise-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.exercise-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform var(--transition-fast), 
+                box-shadow var(--transition-fast);
+}
+
+.exercise-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.exercise-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: var(--spacing-md);
+    background-color: var(--light);
+}
+
+.exercise-name {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: var(--spacing-sm);
+    color: var(--dark);
+}
+
+.exercise-meta {
+    font-size: 14px;
+    color: var(--gray);
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 60px var(--spacing-xl);
+    color: var(--gray);
+    grid-column: 1 / -1;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================
+   Canvas Screen
+   ============================================ */
+.canvas-screen {
+    background-color: var(--white);
+}
+
+.canvas-toolbar {
+    background-color: var(--light);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid #E0E0E0;
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: var(--spacing-xl);
+}
+
+#drawingCanvas {
+    border: 2px solid var(--gray);
+    background: var(--white);
+    cursor: crosshair;
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+    padding: 10px var(--spacing-xl);
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    text-transform: uppercase;
+    font-family: inherit;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--secondary);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background-color: #F57C00;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background-color: #D32F2F;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: background-color var(--transition-fast);
+}
+
+.btn-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   FAB (Floating Action Button)
+   ============================================ */
+.fab {
+    position: fixed;
+    bottom: var(--spacing-xxl);
+    right: var(--spacing-xxl);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--secondary);
+    color: var(--white);
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: transform var(--transition-fast), 
+                box-shadow var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.fab:active {
+    transform: scale(1.05);
+}
+
+/* ============================================
+   Mode Toggle
+   ============================================ */
+.mode-toggle {
+    display: flex;
+    background-color: var(--white);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #E0E0E0;
+}
+
+.mode-toggle button {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color var(--transition-fast);
+    white-space: nowrap;
+}
+
+.mode-toggle button.active {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.mode-toggle button:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   Modal / Dialog
+   ============================================ */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--spacing-lg);
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: 8px;
+    padding: var(--spacing-xxl);
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: auto;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: var(--spacing-lg);
+    color: var(--dark);
+}
+
+.modal-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    margin-top: var(--spacing-lg);
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+input[type="text"],
+input[type="file"],
+textarea {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: var(--spacing-md);
+    transition: border-color var(--transition-fast);
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--dark);
+}
+
+/* ============================================
+   Hotspot Colors
+   ============================================ */
+.hotspot-red {
+    fill: rgba(244, 67, 54, 0.6);
+    stroke: #F44336;
+}
+
+.hotspot-yellow {
+    fill: rgba(255, 193, 7, 0.6);
+    stroke: #FFC107;
+}
+
+.hotspot-blue {
+    fill: rgba(33, 150, 243, 0.6);
+    stroke: #2196F3;
+}
+
+.hotspot-green {
+    fill: rgba(76, 175, 80, 0.6);
+    stroke: #4CAF50;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+    .exercise-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .canvas-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .canvas-toolbar input[type="text"] {
+        margin: 0;
+    }
+    
+    .mode-toggle {
+        width: 100%;
+    }
+    
+    .mode-toggle button {
+        flex: 1;
+        font-size: 12px;
+        padding: var(--spacing-sm);
+    }
+    
+    .fab {
+        bottom: var(--spacing-lg);
+        right: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-title {
+        font-size: 18px;
+    }
+    
+    .home-screen {
+        padding: var(--spacing-md);
+    }
+    
+    .modal-content {
+        padding: var(--spacing-lg);
+    }
+}
