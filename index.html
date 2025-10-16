@@ -66,21 +66,25 @@
     </div>
 
     <!-- New Exercise Dialog -->
-    <div class="modal" id="newExerciseModal">
-        <div class="modal-content">
-            <div class="modal-header">Neue Übung erstellen</div>
-            <label for="newExerciseName">Übungsname</label>
-            <input type="text" id="newExerciseName" placeholder="z.B. Anatomie Herz">
-            
-            <label for="exerciseImage">Bild auswählen</label>
-            <input type="file" id="exerciseImage" accept="image/*">
-            
-            <div class="modal-actions">
-                <button class="btn" id="btnCancelNewExercise">Abbrechen</button>
-                <button class="btn btn-primary" id="btnCreateExercise">Erstellen</button>
+<!-- Audio Dialog -->
+<div class="modal" id="audioModal">
+    <div class="modal-content">
+        <div class="modal-header">Audio hinzufügen</div>
+        
+        <!-- Audio-Quelle auswählen (Initial sichtbar) -->
+        <div id="choiceSection">
+            <p style="margin-bottom: 16px; color: #757575;">Wie möchten Sie das Audio hinzufügen?</p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="btn btn-primary" id="btnChooseRecord" style="width: 100%; padding: 16px;">
+                    🎤 Audio aufnehmen
+                </button>
+                <button class="btn btn-secondary" id="btnChooseFile" style="width: 100%; padding: 16px;">
+                    📁 Audio-Datei hochladen
+                </button>
             </div>
         </div>
     </div>
+</div>    </div>
 
     <!-- Text Dialog -->
     <div class="modal" id="textModal">
@@ -102,13 +106,42 @@
     <!-- Audio Dialog -->
     <div class="modal" id="audioModal">
         <div class="modal-content">
-            <div class="modal-header">Audio aufnehmen</div>
-            <div style="text-align: center; padding: 20px;">
-                <button class="btn btn-primary" id="btnStartRecording">🎤 Aufnahme starten</button>
-                <button class="btn btn-danger" id="btnStopRecording" style="display: none;">⏹ Stoppen</button>
-                <div id="recordingTime" style="margin-top: 12px; font-size: 18px; display: none;">00:00</div>
-                <audio id="audioPreview" controls style="width: 100%; margin-top: 12px; display: none;"></audio>
+            <div class="modal-header">Audio hinzufügen</div>
+            
+            <!-- Audio-Quelle auswählen (Initial sichtbar) -->
+            <div id="choiceSection">
+                <p style="margin-bottom: 16px; color: #757575;">Wie möchten Sie das Audio hinzufügen?</p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn btn-primary" id="btnChooseRecord" style="width: 100%; padding: 16px;">
+                        🎤 Audio aufnehmen
+                    </button>
+                    <button class="btn btn-secondary" id="btnChooseFile" style="width: 100%; padding: 16px;">
+                        📁 Audio-Datei hochladen
+                    </button>
+                </div>
             </div>
+            
+            <!-- Aufnahme-Bereich (Initial versteckt) -->
+            <div id="recordSection" style="display: none;">
+                <button class="btn" id="btnBackToChoice1" style="margin-bottom: 16px;">← Zurück zur Auswahl</button>
+                <div style="text-align: center; padding: 20px; background: #F5F5F5; border-radius: 8px;">
+                    <button class="btn btn-primary" id="btnStartRecording" style="width: 100%; margin-bottom: 12px;">🎤 Aufnahme starten</button>
+                    <button class="btn btn-danger" id="btnStopRecording" style="display: none; width: 100%; margin-bottom: 12px;">⏹ Stoppen</button>
+                    <div id="recordingTime" style="margin-top: 12px; font-size: 24px; font-weight: bold; display: none;">00:00</div>
+                    <audio id="audioPreview" controls style="width: 100%; margin-top: 12px; display: none;"></audio>
+                </div>
+            </div>
+            
+            <!-- Datei-Upload-Bereich (Initial versteckt) -->
+            <div id="fileSection" style="display: none;">
+                <button class="btn" id="btnBackToChoice2" style="margin-bottom: 16px;">← Zurück zur Auswahl</button>
+                <div style="padding: 20px; background: #F5F5F5; border-radius: 8px;">
+                    <label for="audioFileInput">Audio-Datei auswählen (MP3, WAV, OGG)</label>
+                    <input type="file" id="audioFileInput" accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg,audio/webm">
+                    <audio id="audioFilePreview" controls style="width: 100%; margin-top: 12px; display: none;"></audio>
+                </div>
+            </div>
+            
             <div class="modal-actions">
                 <button class="btn" id="btnCancelAudio">Abbrechen</button>
                 <button class="btn btn-primary" id="btnSaveAudio">Speichern</button>

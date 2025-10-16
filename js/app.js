@@ -80,10 +80,36 @@ function setupEventListeners() {
         audioRecorder.stopRecording();
         audioRecorder.cleanup();
         hideModal('audioModal');
+        resetAudioDialog();
     });
     document.getElementById('btnSaveAudio').addEventListener('click', saveHotspotAudio);
     document.getElementById('btnStartRecording').addEventListener('click', startRecording);
     document.getElementById('btnStopRecording').addEventListener('click', stopRecording);
+    
+    // Audio-Quelle wählen
+    document.getElementById('btnChooseRecord').addEventListener('click', () => {
+        document.getElementById('choiceSection').style.display = 'none';
+        document.getElementById('recordSection').style.display = 'block';
+        document.getElementById('fileSection').style.display = 'none';
+    });
+    document.getElementById('btnChooseFile').addEventListener('click', () => {
+        document.getElementById('choiceSection').style.display = 'none';
+        document.getElementById('recordSection').style.display = 'none';
+        document.getElementById('fileSection').style.display = 'block';
+    });
+    
+    // Zurück zur Auswahl
+    document.getElementById('btnBackToChoice1').addEventListener('click', () => {
+        document.getElementById('choiceSection').style.display = 'block';
+        document.getElementById('recordSection').style.display = 'none';
+        audioRecorder.stopRecording();
+    });
+    document.getElementById('btnBackToChoice2').addEventListener('click', () => {
+        document.getElementById('choiceSection').style.display = 'block';
+        document.getElementById('fileSection').style.display = 'none';
+    });
+    
+    document.getElementById('audioFileInput').addEventListener('change', handleAudioFileUpload);
     
     // Canvas Events - werden später in canvas-manager.js implementiert
     setupCanvasEvents();
@@ -427,6 +453,50 @@ function handleCanvasDoubleClick(e) {
 // ============================================
 // HOTSPOT DIALOG HANDLERS
 // ============================================
+
+// Reset Audio Dialog (muss vor openAudioDialog definiert sein)
+function resetAudioDialog() {
+    console.log('🔧 resetAudioDialog called');
+    
+    // Prüfe ob Elemente existieren
+    const choiceSection = document.getElementById('choiceSection');
+    const recordSection = document.getElementById('recordSection');
+    const fileSection = document.getElementById('fileSection');
+    
+    if (!choiceSection || !recordSection || !fileSection) {
+        console.error('❌ Audio dialog elements not found!');
+        console.log('choiceSection:', choiceSection);
+        console.log('recordSection:', recordSection);
+        console.log('fileSection:', fileSection);
+        return;
+    }
+    
+    // Zeige nur Auswahl-Buttons
+    choiceSection.style.display = 'block';
+    recordSection.style.display = 'none';
+    fileSection.style.display = 'none';
+    
+    // Reset Aufnahme
+    const btnStart = document.getElementById('btnStartRecording');
+    const btnStop = document.getElementById('btnStopRecording');
+    const recordTime = document.getElementById('recordingTime');
+    const audioPreview = document.getElementById('audioPreview');
+    
+    if (btnStart) btnStart.style.display = 'inline-block';
+    if (btnStop) btnStop.style.display = 'none';
+    if (recordTime) recordTime.style.display = 'none';
+    if (audioPreview) audioPreview.style.display = 'none';
+    
+    // Reset Datei-Upload
+    const fileInput = document.getElementById('audioFileInput');
+    const filePreview = document.getElementById('audioFilePreview');
+    
+    if (fileInput) fileInput.value = '';
+    if (filePreview) filePreview.style.display = 'none';
+    
+    console.log('✅ resetAudioDialog completed');
+}
+
 function saveHotspotText() {
     const label = document.getElementById('hotspotLabel').value.trim();
     const text = document.getElementById('hotspotText').value.trim();
@@ -479,20 +549,37 @@ function stopRecording() {
 
 function saveHotspotAudio() {
     const audioBlob = audioRecorder.getAudioBlob();
+    const fileInput = document.getElementById('audioFileInput');
     
-    if (!audioBlob) {
-        alert('Bitte erst eine Audio-Aufnahme machen');
+    // Prüfe ob Audio von Aufnahme oder Datei
+    if (audioBlob) {
+        // Von Aufnahme
+        canvasManager.saveAudio(audioBlob);
+    } else if (fileInput.files && fileInput.files[0]) {
+        // Von Datei
+        canvasManager.saveAudio(fileInput.files[0]);
+    } else {
+        alert('Bitte erst Audio aufnehmen oder Datei auswählen');
         return;
     }
     
-    if (!canvasManager.selectedHotspot) {
-        alert('Kein Hotspot ausgewählt');
-        return;
-    }
-    
-    canvasManager.saveAudio(audioBlob);
     audioRecorder.cleanup();
     hideModal('audioModal');
+    resetAudioDialog();
+}
+
+function handleAudioFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    console.log('📁 Audio file selected:', file.name, file.type);
+    
+    // Zeige Vorschau
+    const preview = document.getElementById('audioFilePreview');
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.style.display = 'block';
+    preview.load();
 }
 
 // ============================================
@@ -506,5 +593,8 @@ function escapeHtml(text) {
 
 // Make functions globally accessible
 window.openExercise = openExercise;
+window.canvasManager = canvasManager;
+window.audioRecorder = audioRecorder;
+window.resetAudioDialog = resetAudioDialog;
 
 console.log('✅ app.js loaded');

@@ -454,15 +454,28 @@ class CanvasManager {
      * Öffnet Audio-Dialog für Hotspot
      */
     openAudioDialog(hotspot) {
+        console.log('🎬 openAudioDialog called for:', hotspot.label);
         this.selectedHotspot = hotspot;
         
-        // Reset Dialog
-        document.getElementById('btnStartRecording').style.display = 'inline-block';
-        document.getElementById('btnStopRecording').style.display = 'none';
-        document.getElementById('recordingTime').style.display = 'none';
-        document.getElementById('audioPreview').style.display = 'none';
+        console.log('🔄 Calling resetAudioDialog...');
+        try {
+            if (typeof window.resetAudioDialog === 'function') {
+                window.resetAudioDialog();
+                console.log('✅ resetAudioDialog executed');
+            } else {
+                console.error('❌ resetAudioDialog is not a function:', typeof window.resetAudioDialog);
+            }
+        } catch (error) {
+            console.error('❌ Error in resetAudioDialog:', error);
+        }
         
-        showModal('audioModal');
+        console.log('🔄 Calling showModal...');
+        try {
+            showModal('audioModal');
+            console.log('✅ showModal executed');
+        } catch (error) {
+            console.error('❌ Error in showModal:', error);
+        }
     }
 
     /**
