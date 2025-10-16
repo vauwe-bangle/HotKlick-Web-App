@@ -44,15 +44,23 @@
         <div class="screen" id="canvasScreen">
             <div class="canvas-toolbar">
                 <div class="mode-toggle">
-                    <button id="btnEditMode" class="active">Editiermodus</button>
-                    <button id="btnPracticeMode">Übungsmodus</button>
+                    <button id="btnPracticeMode" class="active">Übungsmodus</button>
                     <button id="btnDeepeningMode">Vertiefungsmodus</button>
+                    <button id="btnEditMode">Editiermodus</button>
                 </div>
+                
+                <!-- Radius Controls (nur im Edit-Modus sichtbar) -->
+                <div id="radiusControls" class="radius-controls hidden">
+                    <button class="btn-icon-small" id="btnDecreaseRadius" title="Radius verkleinern">−</button>
+                    <span id="radiusDisplay">20px</span>
+                    <button class="btn-icon-small" id="btnIncreaseRadius" title="Radius vergrößern">+</button>
+                </div>
+                
                 <input type="text" id="exerciseName" placeholder="Übungsname..." style="flex: 1; margin: 0;">
-                <button class="btn btn-primary" id="btnSave">Speichern</button>
+                <button class="btn btn-save-warning" id="btnSave">⚠️ Wichtig - Daten speichern</button>
             </div>
             <div class="canvas-container">
-                <canvas id="drawingCanvas" width="800" height="600"></canvas>
+                <canvas id="drawingCanvas" width="1024" height="600"></canvas>
             </div>
         </div>
     </div>
@@ -113,6 +121,8 @@
     
     <!-- App Scripts -->
     <script src="js/db.js"></script>
+    <script src="js/audio-recorder.js"></script>
+    <script src="js/canvas-manager.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

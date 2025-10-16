@@ -7,6 +7,8 @@
 // GLOBAL STATE
 // ============================================
 const db = new Database();
+const canvasManager = new CanvasManager();
+const audioRecorder = new AudioRecorder();
 let currentExercise = null;
 let currentHotspots = [];
 let currentMode = 'edit'; // 'edit', 'practice', 'deepening'
@@ -18,6 +20,10 @@ let currentMode = 'edit'; // 'edit', 'practice', 'deepening'
     try {
         await db.init();
         console.log('✅ App initialized');
+        
+        // Initialisiere Canvas Manager
+        const canvas = document.getElementById('drawingCanvas');
+        canvasManager.init(canvas);
         
         await loadExercises();
         setupEventListeners();
@@ -44,24 +50,111 @@ function setupEventListeners() {
     });
     document.getElementById('btnCreateExercise').addEventListener('click', createNewExercise);
     
-    // Mode Toggle
-    document.getElementById('btnEditMode').addEventListener('click', () => setMode('edit'));
+    // Mode Toggle - Practice & Deepening mit normalem Click
     document.getElementById('btnPracticeMode').addEventListener('click', () => setMode('practice'));
     document.getElementById('btnDeepeningMode').addEventListener('click', () => setMode('deepening'));
+    
+    // Edit Mode mit Long-Press
+    setupEditModeButton();
+    
+    // Radius Controls
+    document.getElementById('btnIncreaseRadius').addEventListener('click', () => {
+        canvasManager.increaseRadius();
+    });
+    document.getElementById('btnDecreaseRadius').addEventListener('click', () => {
+        canvasManager.decreaseRadius();
+    });
     
     // Save Exercise
     document.getElementById('btnSave').addEventListener('click', saveExercise);
     
     // Text Dialog
-    document.getElementById('btnCancelText').addEventListener('click', () => hideModal('textModal'));
+    document.getElementById('btnCancelText').addEventListener('click', () => {
+        hideModal('textModal');
+        canvasManager.selectedHotspot = null;
+    });
     document.getElementById('btnSaveText').addEventListener('click', saveHotspotText);
     
     // Audio Dialog
-    document.getElementById('btnCancelAudio').addEventListener('click', () => hideModal('audioModal'));
+    document.getElementById('btnCancelAudio').addEventListener('click', () => {
+        audioRecorder.stopRecording();
+        audioRecorder.cleanup();
+        hideModal('audioModal');
+    });
     document.getElementById('btnSaveAudio').addEventListener('click', saveHotspotAudio);
+    document.getElementById('btnStartRecording').addEventListener('click', startRecording);
+    document.getElementById('btnStopRecording').addEventListener('click', stopRecording);
     
     // Canvas Events - werden später in canvas-manager.js implementiert
     setupCanvasEvents();
+}
+
+// ============================================
+// EDIT MODE BUTTON (Long-Press)
+// ============================================
+let editModeTimer = null;
+let editModeLongPressTriggered = false;
+
+function setupEditModeButton() {
+    const btnEdit = document.getElementById('btnEditMode');
+    
+    // Mouse Events
+    btnEdit.addEventListener('mousedown', () => {
+        editModeLongPressTriggered = false;
+        console.log('🖱️ Edit button pressed - waiting 500ms...');
+        
+        editModeTimer = setTimeout(() => {
+            console.log('✅ Long-press on Edit button detected!');
+            editModeLongPressTriggered = true;
+            setMode('edit');
+            
+            // Visuelles Feedback
+            btnEdit.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btnEdit.style.transform = 'scale(1)';
+            }, 100);
+        }, 500);
+    });
+    
+    btnEdit.addEventListener('mouseup', () => {
+        clearTimeout(editModeTimer);
+        if (!editModeLongPressTriggered) {
+            console.log('⚠️ Edit button: Zu kurz gedrückt (Long-Press erforderlich)');
+            alert('Bitte den Editiermodus-Button länger gedrückt halten (500ms)');
+        }
+    });
+    
+    btnEdit.addEventListener('mouseleave', () => {
+        clearTimeout(editModeTimer);
+    });
+    
+    // Touch Events
+    btnEdit.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        editModeLongPressTriggered = false;
+        
+        editModeTimer = setTimeout(() => {
+            editModeLongPressTriggered = true;
+            setMode('edit');
+            
+            btnEdit.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btnEdit.style.transform = 'scale(1)';
+            }, 100);
+        }, 500);
+    });
+    
+    btnEdit.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        clearTimeout(editModeTimer);
+        if (!editModeLongPressTriggered) {
+            alert('Bitte den Editiermodus-Button länger gedrückt halten (500ms)');
+        }
+    });
+    
+    btnEdit.addEventListener('touchcancel', () => {
+        clearTimeout(editModeTimer);
+    });
 }
 
 // ============================================
@@ -211,7 +304,8 @@ async function openExercise(exerciseId) {
         
         document.getElementById('exerciseName').value = currentExercise.name;
         showScreen('canvasScreen');
-        setMode('edit'); // Starte immer im Editiermodus
+        setMode('practice'); // Starte immer im Übungsmodus
+        canvasManager.resetRadius(); // Reset radius auf Standard
         loadCanvas();
     } catch (error) {
         console.error('Failed to open exercise:', error);
@@ -254,76 +348,16 @@ async function saveExercise() {
 // CANVAS MANAGEMENT
 // ============================================
 function loadCanvas() {
-    const canvas = document.getElementById('drawingCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    const img = new Image();
-    img.onload = () => {
-        // Behalte Bildproportionen bei
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        ctx.drawImage(img, 0, 0);
-        drawHotspots();
-        
-        console.log(`✅ Canvas loaded: ${canvas.width}x${canvas.height}`);
-    };
-    
-    img.onerror = () => {
-        console.error('Failed to load image');
-        alert('Fehler beim Laden des Bildes');
-    };
-    
-    img.src = currentExercise.imageData;
+    if (!currentExercise) return;
+    canvasManager.loadImage(currentExercise.imageData);
 }
 
 function drawHotspots() {
-    const canvas = document.getElementById('drawingCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Lade Bild neu
-    const img = new Image();
-    img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-        
-        // Zeichne alle Hotspots
-        currentHotspots.forEach(hotspot => {
-            const color = getHotspotColor(hotspot);
-            
-            // Zeichne Kreis
-            ctx.beginPath();
-            ctx.arc(hotspot.x, hotspot.y, hotspot.radius, 0, 2 * Math.PI);
-            ctx.fillStyle = color.fill;
-            ctx.fill();
-            ctx.strokeStyle = color.stroke;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // Zeichne Label
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(hotspot.label, hotspot.x, hotspot.y);
-        });
-    };
-    img.src = currentExercise.imageData;
+    canvasManager.redraw();
 }
 
 function getHotspotColor(hotspot) {
-    const hasText = hotspot.text && hotspot.text.trim() !== '';
-    const hasAudio = hotspot.audioBlob !== null;
-    
-    if (hasText && hasAudio) {
-        return { fill: 'rgba(76, 175, 80, 0.6)', stroke: '#4CAF50' }; // Green
-    } else if (hasAudio) {
-        return { fill: 'rgba(33, 150, 243, 0.6)', stroke: '#2196F3' }; // Blue
-    } else if (hasText) {
-        return { fill: 'rgba(255, 193, 7, 0.6)', stroke: '#FFC107' }; // Yellow
-    } else {
-        return { fill: 'rgba(244, 67, 54, 0.6)', stroke: '#F44336' }; // Red
-    }
+    return canvasManager.getHotspotColor(hotspot);
 }
 
 // ============================================
@@ -332,71 +366,132 @@ function getHotspotColor(hotspot) {
 function setMode(mode) {
     currentMode = mode;
     
+    console.log(`🔄 Switching to mode: ${mode}`);
+    
     // Update UI
     document.querySelectorAll('.mode-toggle button').forEach(btn => {
         btn.classList.remove('active');
     });
     
+    // Zeige/Verstecke Radius-Controls
+    const radiusControls = document.getElementById('radiusControls');
+    
+    if (!radiusControls) {
+        console.error('❌ Radius controls element not found!');
+        return;
+    }
+    
+    console.log(`📍 Radius controls element found:`, radiusControls);
+    
     if (mode === 'edit') {
         document.getElementById('btnEditMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'crosshair';
+        radiusControls.classList.remove('hidden');
+        console.log('✅ Radius controls shown (edit mode)');
     } else if (mode === 'practice') {
         document.getElementById('btnPracticeMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'pointer';
+        radiusControls.classList.add('hidden');
+        console.log('👻 Radius controls hidden (practice mode)');
     } else if (mode === 'deepening') {
         document.getElementById('btnDeepeningMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'default';
+        radiusControls.classList.add('hidden');
+        console.log('👻 Radius controls hidden (deepening mode)');
     }
     
-    console.log('Mode:', mode);
+    // Redraw canvas mit neuer Transparenz
+    if (currentExercise) {
+        canvasManager.redraw();
+    }
+    
+    console.log('✅ Mode switched:', mode);
 }
 
 // ============================================
 // CANVAS EVENTS (Placeholder - wird erweitert)
 // ============================================
 function setupCanvasEvents() {
-    const canvas = document.getElementById('drawingCanvas');
-    
-    canvas.addEventListener('click', handleCanvasClick);
-    canvas.addEventListener('dblclick', handleCanvasDoubleClick);
-    
-    console.log('✅ Canvas events setup');
+    // Events werden jetzt vom CanvasManager verwaltet
+    console.log('✅ Canvas events delegated to CanvasManager');
 }
 
 function handleCanvasClick(e) {
-    if (!currentExercise) return;
-    
-    const rect = e.target.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    console.log(`Canvas click at: ${x}, ${y} (Mode: ${currentMode})`);
-    
-    // Wird in Phase 2 erweitert
+    // Nicht mehr benötigt - wird von CanvasManager verwaltet
 }
 
 function handleCanvasDoubleClick(e) {
-    if (!currentExercise) return;
-    
-    const rect = e.target.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    console.log(`Canvas double-click at: ${x}, ${y} (Mode: ${currentMode})`);
-    
-    // Wird in Phase 2 erweitert
+    // Nicht mehr benötigt - wird von CanvasManager verwaltet
 }
 
 // ============================================
-// HOTSPOT DIALOG HANDLERS (Placeholder)
+// HOTSPOT DIALOG HANDLERS
 // ============================================
 function saveHotspotText() {
-    console.log('Save text - will be implemented in Phase 2');
+    const label = document.getElementById('hotspotLabel').value.trim();
+    const text = document.getElementById('hotspotText').value.trim();
+    
+    if (!label) {
+        alert('Bitte gib ein Label ein');
+        return;
+    }
+    
+    canvasManager.saveText(label, text);
     hideModal('textModal');
 }
 
+async function startRecording() {
+    console.log('🎤 Start recording button clicked');
+    
+    const btnStart = document.getElementById('btnStartRecording');
+    const btnStop = document.getElementById('btnStopRecording');
+    const preview = document.getElementById('audioPreview');
+    
+    preview.style.display = 'none';
+    
+    console.log('📱 Requesting microphone access...');
+    const started = await audioRecorder.startRecording();
+    
+    if (started) {
+        console.log('✅ Recording started successfully');
+        btnStart.style.display = 'none';
+        btnStop.style.display = 'inline-block';
+    } else {
+        console.error('❌ Failed to start recording');
+    }
+}
+
+function stopRecording() {
+    const btnStart = document.getElementById('btnStartRecording');
+    const btnStop = document.getElementById('btnStopRecording');
+    
+    audioRecorder.stopRecording();
+    
+    btnStart.style.display = 'inline-block';
+    btnStop.style.display = 'none';
+    
+    // Zeige Vorschau
+    const audioBlob = audioRecorder.getAudioBlob();
+    if (audioBlob) {
+        audioRecorder.showPreview(audioBlob);
+    }
+}
+
 function saveHotspotAudio() {
-    console.log('Save audio - will be implemented in Phase 2');
+    const audioBlob = audioRecorder.getAudioBlob();
+    
+    if (!audioBlob) {
+        alert('Bitte erst eine Audio-Aufnahme machen');
+        return;
+    }
+    
+    if (!canvasManager.selectedHotspot) {
+        alert('Kein Hotspot ausgewählt');
+        return;
+    }
+    
+    canvasManager.saveAudio(audioBlob);
+    audioRecorder.cleanup();
     hideModal('audioModal');
 }
 

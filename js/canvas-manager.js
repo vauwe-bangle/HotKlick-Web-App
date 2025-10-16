@@ -1,0 +1,717 @@
+/**
+ * HotKlick Canvas Manager
+ * Verwaltung von Canvas-Events und Hotspot-Interaktionen
+ */
+
+class CanvasManager {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.clickTimeout = null;
+        this.clickCount = 0;
+        this.lastClickTime = 0;
+        this.DOUBLE_CLICK_DELAY = 300; // ms
+        this.LONG_PRESS_DELAY = 500; // ms für Long-Press
+        this.currentRadius = 20; // Aktueller Hotspot-Radius (Start bei 20)
+        this.MIN_RADIUS = 10;
+        this.MAX_RADIUS = 120;
+        this.RADIUS_STEP = 10;
+        this.selectedHotspot = null;
+        this.longPressTimer = null;
+        this.longPressTriggered = false;
+        this.pressStartCoords = null;
+    }
+
+    init(canvasElement) {
+        this.canvas = canvasElement;
+        this.ctx = this.canvas.getContext('2d');
+        this.setupEvents();
+        console.log('✅ Canvas Manager initialized');
+    }
+
+    setupEvents() {
+        console.log('🔧 Setting up canvas events...');
+        
+        // Mouse Events
+        this.canvas.addEventListener('mousedown', (e) => {
+            console.log('🖱️ Mouse down detected');
+            this.handleMouseDown(e);
+        });
+        this.canvas.addEventListener('mouseup', (e) => {
+            console.log('🖱️ Mouse up detected');
+            this.handleMouseUp(e);
+        });
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('mouseleave', (e) => this.cancelLongPress());
+        
+        // Prevent default double-click selection
+        this.canvas.addEventListener('dblclick', (e) => e.preventDefault());
+        
+        // Touch support for mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            console.log('📱 Touch start detected');
+            this.handleTouchStart(e);
+        });
+        this.canvas.addEventListener('touchend', (e) => {
+            console.log('📱 Touch end detected');
+            this.handleTouchEnd(e);
+        });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        this.canvas.addEventListener('touchcancel', (e) => this.cancelLongPress());
+        
+        console.log('✅ Canvas events setup complete');
+    }
+
+    /**
+     * Mouse Down Handler - Start Long-Press Timer
+     */
+    handleMouseDown(e) {
+        console.log('🔽 Mouse down handler called');
+        const coords = this.getCanvasCoordinates(e);
+        console.log(`📍 Coordinates: x=${coords.x}, y=${coords.y}`);
+        console.log(`📋 Current mode: ${currentMode}`);
+        
+        this.pressStartCoords = coords;
+        this.longPressTriggered = false;
+        
+        // Starte Long-Press Timer
+        console.log('⏱️ Starting long-press timer (500ms)...');
+        this.longPressTimer = setTimeout(() => {
+            console.log('✅ Long-press timer fired!');
+            this.handleLongPress(coords);
+        }, this.LONG_PRESS_DELAY);
+    }
+
+    /**
+     * Mouse Up Handler - Click oder Doppelklick
+     */
+    handleMouseUp(e) {
+        this.cancelLongPress();
+        
+        if (this.longPressTriggered) {
+            return; // Long-Press wurde bereits behandelt
+        }
+        
+        const coords = this.getCanvasCoordinates(e);
+        const now = Date.now();
+        
+        // Doppelklick-Erkennung
+        if (now - this.lastClickTime < this.DOUBLE_CLICK_DELAY) {
+            this.clickCount++;
+        } else {
+            this.clickCount = 1;
+        }
+        
+        this.lastClickTime = now;
+        
+        // Warte kurz, um zu sehen ob noch ein Klick kommt
+        clearTimeout(this.clickTimeout);
+        
+        this.clickTimeout = setTimeout(() => {
+            if (this.clickCount === 1) {
+                this.handleSingleClick(coords);
+            } else if (this.clickCount >= 2) {
+                this.handleDoubleClick(coords);
+            }
+            this.clickCount = 0;
+        }, this.DOUBLE_CLICK_DELAY);
+    }
+
+    /**
+     * Mouse Move Handler - Cancel Long-Press bei Bewegung
+     */
+    handleMouseMove(e) {
+        if (!this.pressStartCoords) return;
+        
+        const coords = this.getCanvasCoordinates(e);
+        const dx = coords.x - this.pressStartCoords.x;
+        const dy = coords.y - this.pressStartCoords.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Wenn sich Maus bewegt hat, cancel Long-Press
+        if (distance > 10) {
+            this.cancelLongPress();
+        }
+    }
+
+    /**
+     * Touch Start Handler
+     */
+    handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const coords = this.getTouchCoordinates(touch);
+        this.pressStartCoords = coords;
+        this.longPressTriggered = false;
+        
+        // Starte Long-Press Timer
+        this.longPressTimer = setTimeout(() => {
+            this.handleLongPress(coords);
+        }, this.LONG_PRESS_DELAY);
+    }
+
+    /**
+     * Touch End Handler
+     */
+    handleTouchEnd(e) {
+        e.preventDefault();
+        this.cancelLongPress();
+        
+        if (this.longPressTriggered) {
+            return;
+        }
+        
+        if (!this.pressStartCoords) return;
+        
+        const coords = this.pressStartCoords;
+        const now = Date.now();
+        
+        // Doppel-Tap Erkennung
+        if (now - this.lastClickTime < this.DOUBLE_CLICK_DELAY) {
+            this.clickCount++;
+        } else {
+            this.clickCount = 1;
+        }
+        
+        this.lastClickTime = now;
+        
+        clearTimeout(this.clickTimeout);
+        
+        this.clickTimeout = setTimeout(() => {
+            if (this.clickCount === 1) {
+                this.handleSingleClick(coords);
+            } else if (this.clickCount >= 2) {
+                this.handleDoubleClick(coords);
+            }
+            this.clickCount = 0;
+        }, this.DOUBLE_CLICK_DELAY);
+    }
+
+    /**
+     * Touch Move Handler
+     */
+    handleTouchMove(e) {
+        if (!this.pressStartCoords || e.touches.length === 0) return;
+        
+        const touch = e.touches[0];
+        const coords = this.getTouchCoordinates(touch);
+        const dx = coords.x - this.pressStartCoords.x;
+        const dy = coords.y - this.pressStartCoords.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 10) {
+            this.cancelLongPress();
+        }
+    }
+
+    /**
+     * Bricht Long-Press Timer ab
+     */
+    cancelLongPress() {
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+        this.pressStartCoords = null;
+    }
+
+    /**
+     * Long-Press Handler - Hotspot erstellen oder Audio-Dialog
+     */
+    handleLongPress(coords) {
+        console.log('🔥 Long-press triggered!');
+        console.log(`📋 Mode: ${currentMode}`);
+        console.log(`📍 Coords: x=${coords.x}, y=${coords.y}`);
+        
+        this.longPressTriggered = true;
+        
+        if (currentMode === 'edit') {
+            console.log('✏️ Edit mode - checking for existing hotspot...');
+            
+            // Prüfe ob bereits Hotspot an Position
+            const existingHotspot = this.findHotspotAt(coords.x, coords.y);
+            
+            if (existingHotspot) {
+                console.log('🎤 Hotspot exists - opening audio dialog:', existingHotspot.label);
+                // Long-Press auf existierenden Hotspot → Audio-Dialog öffnen
+                this.openAudioDialog(existingHotspot);
+            } else {
+                console.log('✅ No hotspot found - creating new one...');
+                // Erstelle neuen Hotspot
+                this.createHotspot(coords.x, coords.y);
+                
+                // Visuelles Feedback
+                this.canvas.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.canvas.style.transform = 'scale(1)';
+                }, 100);
+            }
+        } else {
+            console.log(`⚠️ Not in edit mode (current: ${currentMode})`);
+        }
+    }
+
+    /**
+     * Single Click Handler
+     * Edit-Modus: Hotspot löschen
+     * Practice-Modus: Text anzeigen
+     */
+    handleSingleClick(coords) {
+        const hotspot = this.findHotspotAt(coords.x, coords.y);
+        
+        if (currentMode === 'edit') {
+            if (hotspot) {
+                // Hotspot gefunden → Löschen
+                this.deleteHotspot(hotspot);
+            }
+            // Kein Hotspot und kein Long-Press → nichts tun
+        } else if (currentMode === 'practice') {
+            if (hotspot) {
+                this.showHotspotText(hotspot);
+            }
+        }
+    }
+
+    /**
+     * Double Click Handler
+     * Edit-Modus: Text-Dialog öffnen
+     * Practice-Modus: Audio abspielen + Text
+     */
+    handleDoubleClick(coords) {
+        const hotspot = this.findHotspotAt(coords.x, coords.y);
+        
+        if (!hotspot) return;
+        
+        if (currentMode === 'edit') {
+            this.editHotspot(hotspot);
+        } else if (currentMode === 'practice') {
+            this.showHotspotTextAndAudio(hotspot);
+        }
+    }
+
+    /**
+     * Touch-Handler für Mobile
+     */
+    handleTouch(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('click', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        this.canvas.dispatchEvent(mouseEvent);
+    }
+
+    /**
+     * Konvertiert Bildschirm- zu Canvas-Koordinaten
+     */
+    getCanvasCoordinates(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+
+    /**
+     * Konvertiert Touch- zu Canvas-Koordinaten
+     */
+    getTouchCoordinates(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
+        return {
+            x: (touch.clientX - rect.left) * scaleX,
+            y: (touch.clientY - rect.top) * scaleY
+        };
+    }
+
+    /**
+     * Findet Hotspot an gegebenen Koordinaten
+     */
+    findHotspotAt(x, y) {
+        return currentHotspots.find(hotspot => {
+            const dx = x - hotspot.x;
+            const dy = y - hotspot.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance <= hotspot.radius;
+        });
+    }
+
+    /**
+     * Erstellt neuen Hotspot
+     */
+    async createHotspot(x, y) {
+        console.log('🎯 Creating hotspot...');
+        
+        // Generiere nächstes Label (A1, A2, ...)
+        const nextLabel = this.generateNextLabel();
+        console.log(`🏷️ Generated label: ${nextLabel}`);
+        
+        const hotspot = {
+            id: db.generateId(),
+            exerciseId: currentExercise.id,
+            x: Math.round(x),
+            y: Math.round(y),
+            radius: this.currentRadius, // Verwende aktuellen Radius
+            label: nextLabel,
+            text: '',
+            audioBlob: null,
+            hasText: false,
+            hasAudio: false
+        };
+
+        console.log('💾 Saving hotspot to database...', hotspot);
+
+        try {
+            await db.addHotspot(hotspot);
+            currentHotspots.push(hotspot);
+            this.redraw();
+            console.log(`✅ Hotspot created successfully: ${nextLabel} at (${hotspot.x}, ${hotspot.y}) with radius ${hotspot.radius}`);
+        } catch (error) {
+            console.error('❌ Failed to create hotspot:', error);
+            alert('Fehler beim Erstellen des Hotspots: ' + error.message);
+        }
+    }
+
+    /**
+     * Erhöht Hotspot-Radius
+     */
+    increaseRadius() {
+        if (this.currentRadius < this.MAX_RADIUS) {
+            this.currentRadius += this.RADIUS_STEP;
+            this.updateRadiusDisplay();
+            console.log(`📏 Radius increased to ${this.currentRadius}px`);
+        }
+    }
+
+    /**
+     * Verkleinert Hotspot-Radius
+     */
+    decreaseRadius() {
+        if (this.currentRadius > this.MIN_RADIUS) {
+            this.currentRadius -= this.RADIUS_STEP;
+            this.updateRadiusDisplay();
+            console.log(`📏 Radius decreased to ${this.currentRadius}px`);
+        }
+    }
+
+    /**
+     * Aktualisiert Radius-Anzeige
+     */
+    updateRadiusDisplay() {
+        const display = document.getElementById('radiusDisplay');
+        if (display) {
+            display.textContent = `${this.currentRadius}px`;
+        }
+    }
+
+    /**
+     * Setzt Radius zurück auf Standard
+     */
+    resetRadius() {
+        this.currentRadius = 20; // Start bei 20px
+        this.updateRadiusDisplay();
+    }
+
+    /**
+     * Löscht Hotspot
+     */
+    async deleteHotspot(hotspot) {
+        if (!confirm(`Hotspot "${hotspot.label}" wirklich löschen?`)) {
+            return;
+        }
+
+        try {
+            await db.deleteHotspot(hotspot.id);
+            currentHotspots = currentHotspots.filter(h => h.id !== hotspot.id);
+            this.redraw();
+            console.log(`✅ Hotspot deleted: ${hotspot.label}`);
+        } catch (error) {
+            console.error('Failed to delete hotspot:', error);
+            alert('Fehler beim Löschen des Hotspots');
+        }
+    }
+
+    /**
+     * Öffnet Text-Dialog für Hotspot
+     */
+    editHotspot(hotspot) {
+        this.selectedHotspot = hotspot;
+        
+        // Fülle Dialog mit aktuellen Daten
+        document.getElementById('hotspotLabel').value = hotspot.label;
+        document.getElementById('hotspotText').value = hotspot.text || '';
+        
+        showModal('textModal');
+    }
+
+    /**
+     * Öffnet Audio-Dialog für Hotspot
+     */
+    openAudioDialog(hotspot) {
+        this.selectedHotspot = hotspot;
+        
+        // Reset Dialog
+        document.getElementById('btnStartRecording').style.display = 'inline-block';
+        document.getElementById('btnStopRecording').style.display = 'none';
+        document.getElementById('recordingTime').style.display = 'none';
+        document.getElementById('audioPreview').style.display = 'none';
+        
+        showModal('audioModal');
+    }
+
+    /**
+     * Speichert Text-Änderungen
+     */
+    async saveText(label, text) {
+        if (!this.selectedHotspot) return;
+
+        this.selectedHotspot.label = label.trim() || this.selectedHotspot.label;
+        this.selectedHotspot.text = text.trim();
+        this.selectedHotspot.hasText = this.selectedHotspot.text !== '';
+
+        try {
+            await db.updateHotspot(this.selectedHotspot);
+            this.redraw();
+            console.log(`✅ Hotspot updated: ${this.selectedHotspot.label}`);
+        } catch (error) {
+            console.error('Failed to update hotspot:', error);
+            alert('Fehler beim Speichern');
+        }
+
+        this.selectedHotspot = null;
+    }
+
+    /**
+     * Speichert Audio
+     */
+    async saveAudio(audioBlob) {
+        if (!this.selectedHotspot) return;
+
+        this.selectedHotspot.audioBlob = audioBlob;
+        this.selectedHotspot.hasAudio = true;
+
+        try {
+            await db.updateHotspot(this.selectedHotspot);
+            
+            // Update in currentHotspots Array
+            const index = currentHotspots.findIndex(h => h.id === this.selectedHotspot.id);
+            if (index !== -1) {
+                currentHotspots[index] = this.selectedHotspot;
+            }
+            
+            this.redraw();
+            console.log(`✅ Audio saved for hotspot: ${this.selectedHotspot.label}`);
+        } catch (error) {
+            console.error('Failed to save audio:', error);
+            alert('Fehler beim Speichern des Audios');
+        }
+
+        this.selectedHotspot = null;
+    }
+
+    /**
+     * Zeigt Hotspot-Text an (Practice-Modus) - OHNE Label
+     */
+    showHotspotText(hotspot) {
+        if (!hotspot.hasText) {
+            alert(`Dieser Hotspot hat keinen Text`);
+            return;
+        }
+
+        // Erstelle Overlay für Text-Anzeige (ohne Label)
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 400px;
+            z-index: 2000;
+        `;
+        
+        overlay.innerHTML = `
+            <p style="margin: 0; line-height: 1.6;">${hotspot.text}</p>
+            <button onclick="this.parentElement.remove()" 
+                    style="margin-top: 16px; padding: 8px 16px; 
+                           background: #2196F3; color: white; border: none; 
+                           border-radius: 4px; cursor: pointer;">
+                Schließen
+            </button>
+        `;
+        
+        document.body.appendChild(overlay);
+    }
+
+    /**
+     * Zeigt Text und spielt Audio (Practice-Modus, Doppelklick)
+     */
+    showHotspotTextAndAudio(hotspot) {
+        // Zeige Text
+        if (hotspot.hasText) {
+            this.showHotspotText(hotspot);
+        }
+        
+        // Spiele Audio
+        if (hotspot.hasAudio && hotspot.audioBlob) {
+            const audio = new Audio(URL.createObjectURL(hotspot.audioBlob));
+            audio.play().catch(error => {
+                console.error('Audio playback failed:', error);
+            });
+        } else if (!hotspot.hasText && !hotspot.hasAudio) {
+            alert('Dieser Hotspot hat weder Text noch Audio');
+        }
+    }
+
+    /**
+     * Generiert nächstes Label (A1, A2, ..., A9, B1, B2, ...)
+     */
+    generateNextLabel() {
+        if (currentHotspots.length === 0) {
+            return 'A1';
+        }
+
+        // Finde höchstes Label
+        const labels = currentHotspots.map(h => h.label).sort();
+        const lastLabel = labels[labels.length - 1];
+        
+        // Parse Label (z.B. "A1" → letter: "A", number: 1)
+        const match = lastLabel.match(/^([A-Z])(\d+)$/);
+        if (!match) {
+            return 'A1'; // Fallback
+        }
+
+        let letter = match[1];
+        let number = parseInt(match[2]);
+
+        // Erhöhe Nummer
+        number++;
+        
+        // Bei 10 → nächster Buchstabe
+        if (number > 9) {
+            letter = String.fromCharCode(letter.charCodeAt(0) + 1);
+            number = 1;
+        }
+
+        return `${letter}${number}`;
+    }
+
+    /**
+     * Zeichnet Canvas neu
+     */
+    redraw() {
+        if (!currentExercise) {
+            console.warn('⚠️ No current exercise - cannot redraw');
+            return;
+        }
+
+        console.log(`🎨 Redrawing canvas with ${currentHotspots.length} hotspots`);
+
+        const img = new Image();
+        img.onload = () => {
+            // Lösche Canvas
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Zeichne Bild
+            this.ctx.drawImage(img, 0, 0);
+            
+            // Zeichne Hotspots
+            console.log('🎨 Drawing hotspots...');
+            currentHotspots.forEach((hotspot, index) => {
+                console.log(`  → Drawing hotspot ${index + 1}/${currentHotspots.length}: ${hotspot.label} at (${hotspot.x}, ${hotspot.y})`);
+                this.drawHotspot(hotspot);
+            });
+            
+            console.log('✅ Redraw complete');
+        };
+        
+        img.onerror = () => {
+            console.error('❌ Failed to load image for redraw');
+        };
+        
+        img.src = currentExercise.imageData;
+    }
+
+    /**
+     * Zeichnet einzelnen Hotspot
+     */
+    drawHotspot(hotspot) {
+        // Im Practice-Modus: Hotspots NICHT zeichnen (komplett transparent)
+        if (currentMode === 'practice') {
+            console.log(`  👻 Hotspot ${hotspot.label} hidden (practice mode)`);
+            return; // Zeichne nichts im Practice-Modus
+        }
+        
+        console.log(`  🔵 Drawing circle at (${hotspot.x}, ${hotspot.y}) with radius ${hotspot.radius}`);
+        
+        const color = this.getHotspotColor(hotspot);
+        console.log(`  🎨 Color: ${color.stroke}, Mode: ${currentMode}`);
+        
+        // Zeichne Kreis (nur im Edit-Modus)
+        this.ctx.beginPath();
+        this.ctx.arc(hotspot.x, hotspot.y, hotspot.radius, 0, 2 * Math.PI);
+        this.ctx.fillStyle = color.fill;
+        this.ctx.fill();
+        this.ctx.strokeStyle = color.stroke;
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        
+        // Zeichne Label
+        this.ctx.fillStyle = '#000';
+        this.ctx.font = 'bold 14px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(hotspot.label, hotspot.x, hotspot.y);
+        
+        console.log(`  ✅ Hotspot ${hotspot.label} drawn`);
+    }
+
+    /**
+     * Bestimmt Hotspot-Farbe basierend auf Inhalt
+     */
+    getHotspotColor(hotspot) {
+        const hasText = hotspot.text && hotspot.text.trim() !== '';
+        const hasAudio = hotspot.audioBlob !== null;
+        
+        if (hasText && hasAudio) {
+            return { fill: 'rgba(76, 175, 80, 0.6)', stroke: '#4CAF50' }; // Green
+        } else if (hasAudio) {
+            return { fill: 'rgba(33, 150, 243, 0.6)', stroke: '#2196F3' }; // Blue
+        } else if (hasText) {
+            return { fill: 'rgba(255, 193, 7, 0.6)', stroke: '#FFC107' }; // Yellow
+        } else {
+            return { fill: 'rgba(244, 67, 54, 0.6)', stroke: '#F44336' }; // Red
+        }
+    }
+
+    /**
+     * Lädt Canvas mit Bild
+     */
+    loadImage(imageData) {
+        const img = new Image();
+        img.onload = () => {
+            this.canvas.width = img.width;
+            this.canvas.height = img.height;
+            this.ctx.drawImage(img, 0, 0);
+            this.redraw();
+            console.log(`✅ Canvas loaded: ${this.canvas.width}x${this.canvas.height}`);
+        };
+        img.onerror = () => {
+            console.error('Failed to load image');
+            alert('Fehler beim Laden des Bildes');
+        };
+        img.src = imageData;
+    }
+}
+
+// Export als globale Variable
+window.CanvasManager = CanvasManager;
