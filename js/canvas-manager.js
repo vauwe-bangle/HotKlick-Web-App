@@ -490,11 +490,46 @@ class CanvasManager {
 
         try {
             await db.updateHotspot(this.selectedHotspot);
+            
+            // Update in currentHotspots Array
+            const index = currentHotspots.findIndex(h => h.id === this.selectedHotspot.id);
+            if (index !== -1) {
+                currentHotspots[index] = this.selectedHotspot;
+            }
+            
             this.redraw();
             console.log(`✅ Hotspot updated: ${this.selectedHotspot.label}`);
         } catch (error) {
             console.error('Failed to update hotspot:', error);
             alert('Fehler beim Speichern');
+        }
+
+        this.selectedHotspot = null;
+    }
+
+    /**
+     * Speichert Audio
+     */
+    async saveAudio(audioBlob) {
+        if (!this.selectedHotspot) return;
+
+        this.selectedHotspot.audioBlob = audioBlob;
+        this.selectedHotspot.hasAudio = true;
+
+        try {
+            await db.updateHotspot(this.selectedHotspot);
+            
+            // Update in currentHotspots Array
+            const index = currentHotspots.findIndex(h => h.id === this.selectedHotspot.id);
+            if (index !== -1) {
+                currentHotspots[index] = this.selectedHotspot;
+            }
+            
+            this.redraw();
+            console.log(`✅ Audio saved for hotspot: ${this.selectedHotspot.label}`);
+        } catch (error) {
+            console.error('Failed to save audio:', error);
+            alert('Fehler beim Speichern des Audios');
         }
 
         this.selectedHotspot = null;
@@ -537,6 +572,9 @@ class CanvasManager {
             return;
         }
 
+        // Konvertiere URLs in klickbare Links
+        const textWithLinks = this.convertLinksToHtml(hotspot.text);
+
         // Erstelle Overlay für Text-Anzeige (ohne Label)
         const overlay = document.createElement('div');
         overlay.style.cssText = `
@@ -553,7 +591,7 @@ class CanvasManager {
         `;
         
         overlay.innerHTML = `
-            <p style="margin: 0; line-height: 1.6;">${hotspot.text}</p>
+            <div style="margin: 0; line-height: 1.6;">${textWithLinks}</div>
             <button onclick="this.parentElement.remove()" 
                     style="margin-top: 16px; padding: 8px 16px; 
                            background: #2196F3; color: white; border: none; 
@@ -563,6 +601,20 @@ class CanvasManager {
         `;
         
         document.body.appendChild(overlay);
+    }
+
+    /**
+     * Konvertiert URLs im Text zu klickbaren Links
+     */
+    convertLinksToHtml(text) {
+        // Regex für URLs (http://, https://, www.)
+        const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+        
+        return text.replace(urlRegex, (url) => {
+            // Füge https:// hinzu wenn nur www
+            const href = url.startsWith('www.') ? 'https://' + url : url;
+            return `<a href="${href}" target="_blank" style="color: #2196F3; text-decoration: underline;">${url}</a>`;
+        });
     }
 
     /**

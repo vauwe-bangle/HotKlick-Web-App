@@ -66,25 +66,21 @@
     </div>
 
     <!-- New Exercise Dialog -->
-<!-- Audio Dialog -->
-<div class="modal" id="audioModal">
-    <div class="modal-content">
-        <div class="modal-header">Audio hinzufügen</div>
-        
-        <!-- Audio-Quelle auswählen (Initial sichtbar) -->
-        <div id="choiceSection">
-            <p style="margin-bottom: 16px; color: #757575;">Wie möchten Sie das Audio hinzufügen?</p>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button class="btn btn-primary" id="btnChooseRecord" style="width: 100%; padding: 16px;">
-                    🎤 Audio aufnehmen
-                </button>
-                <button class="btn btn-secondary" id="btnChooseFile" style="width: 100%; padding: 16px;">
-                    📁 Audio-Datei hochladen
-                </button>
+    <div class="modal" id="newExerciseModal">
+        <div class="modal-content">
+            <div class="modal-header">Neue Übung erstellen</div>
+            <label for="newExerciseName">Übungsname</label>
+            <input type="text" id="newExerciseName" placeholder="z.B. Anatomie Herz">
+            
+            <label for="exerciseImage">Bild auswählen</label>
+            <input type="file" id="exerciseImage" accept="image/*">
+            
+            <div class="modal-actions">
+                <button class="btn" id="btnCancelNewExercise">Abbrechen</button>
+                <button class="btn btn-primary" id="btnCreateExercise">Erstellen</button>
             </div>
         </div>
     </div>
-</div>    </div>
 
     <!-- Text Dialog -->
     <div class="modal" id="textModal">

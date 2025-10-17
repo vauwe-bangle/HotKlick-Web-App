@@ -1,8 +1,6 @@
 /**
- * Audio Recorder & Player
- * MediaRecorder API für Browser-Audio
+ * Audio Recorder
  */
-
 class AudioRecorder {
     constructor() {
         this.mediaRecorder = null;
@@ -14,34 +12,23 @@ class AudioRecorder {
         this.currentAudioBlob = null;
     }
 
-    /**
-     * Initialisiert Mikrofon-Zugriff
-     */
     async initialize() {
         try {
             this.stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 44100
-                } 
+                audio: { echoCancellation: true, noiseSuppression: true } 
             });
             console.log('✅ Microphone access granted');
             return true;
         } catch (error) {
             console.error('❌ Microphone access denied:', error);
-            alert('Mikrofon-Zugriff verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.');
+            alert('Mikrofon-Zugriff verweigert. Bitte erlaube den Zugriff.');
             return false;
         }
     }
 
-    /**
-     * Startet Audio-Aufnahme
-     */
     async startRecording() {
         if (this.isRecording) return;
 
-        // Initialisiere Mikrofon falls nötig
         if (!this.stream) {
             const initialized = await this.initialize();
             if (!initialized) return false;
@@ -50,13 +37,11 @@ class AudioRecorder {
         this.audioChunks = [];
         this.currentAudioBlob = null;
 
-        // MediaRecorder mit WebM/Opus (beste Kompression)
         try {
             this.mediaRecorder = new MediaRecorder(this.stream, {
                 mimeType: 'audio/webm;codecs=opus'
             });
         } catch (e) {
-            // Fallback für Safari
             this.mediaRecorder = new MediaRecorder(this.stream);
         }
 
@@ -80,9 +65,6 @@ class AudioRecorder {
         return true;
     }
 
-    /**
-     * Stoppt Audio-Aufnahme
-     */
     stopRecording() {
         if (!this.isRecording || !this.mediaRecorder) return null;
 
@@ -94,9 +76,6 @@ class AudioRecorder {
         return this.currentAudioBlob;
     }
 
-    /**
-     * Timer für Aufnahme-Anzeige
-     */
     startTimer() {
         const display = document.getElementById('recordingTime');
         if (!display) return;
@@ -113,9 +92,6 @@ class AudioRecorder {
         }, 100);
     }
 
-    /**
-     * Stoppt Timer
-     */
     stopTimer() {
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
@@ -123,39 +99,10 @@ class AudioRecorder {
         }
     }
 
-    /**
-     * Gibt aktuelles Audio-Blob zurück
-     */
     getAudioBlob() {
         return this.currentAudioBlob;
     }
 
-    /**
-     * Spielt Audio ab
-     */
-    playAudio(audioBlob) {
-        if (!audioBlob) {
-            console.warn('⚠️ No audio to play');
-            return;
-        }
-
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        
-        audio.play().catch(error => {
-            console.error('❌ Audio playback failed:', error);
-            alert('Audio-Wiedergabe fehlgeschlagen');
-        });
-
-        // Cleanup nach Wiedergabe
-        audio.onended = () => {
-            URL.revokeObjectURL(audioUrl);
-        };
-    }
-
-    /**
-     * Zeigt Audio-Vorschau
-     */
     showPreview(audioBlob) {
         const preview = document.getElementById('audioPreview');
         if (!preview) return;
@@ -166,9 +113,6 @@ class AudioRecorder {
         preview.load();
     }
 
-    /**
-     * Bereinigung
-     */
     cleanup() {
         this.stopTimer();
         
@@ -182,5 +126,4 @@ class AudioRecorder {
     }
 }
 
-// Export als globale Variable
-window.AudioRecorder = AudioRecorder;
+window.AudioRecorder = AudioR
