@@ -13,6 +13,13 @@ let currentExercise = null;
 let currentHotspots = [];
 let currentMode = 'edit'; // 'edit', 'practice', 'deepening'
 
+// Deepening Mode State
+let deepeningMode = null; // 'text', 'audio', 'both'
+let deepeningTasks = [];
+let deepeningCurrentTask = 0;
+let deepeningCorrect = 0;
+let deepeningWrong = 0;
+
 // ============================================
 // APP INITIALIZATION
 // ============================================
@@ -608,15 +615,73 @@ function handleAudioFileUpload(e) {
     preview.load();
 }
 
-// ============================================
-// DEEPENING MODE
-// ============================================
-let deepeningMode = null; // Global am Anfang von app.js
 
 function startDeepening(mode) {
     deepeningMode = mode;
     console.log('🎯 Starting deepening mode:', mode);
     showModal('taskCountModal');
+}
+
+
+// ============================================
+// DEEPENING MODE FUNCTIONS
+// ============================================
+
+function showFinalResult() {
+    const percentage = Math.round((deepeningCorrect / deepeningTasks.length) * 100);
+    
+    // Verstecke Stats und Frage
+    document.getElementById('deepeningStats').style.display = 'none';
+    document.getElementById('deepeningQuestion').style.display = 'none';
+    
+    alert('🎉 Endergebnis\n\n' + deepeningCorrect + ' von ' + deepeningTasks.length + ' richtig\n' + percentage + '%');
+    
+    // Zurück zum Übungsmodus
+    setMode('practice');
+}
+
+function showNextTask() {
+    console.log('🎬 showNextTask called, task:', deepeningCurrentTask, 'of', deepeningTasks.length);
+    
+    if (deepeningCurrentTask >= deepeningTasks.length) {
+        showFinalResult();
+        return;
+    }
+    
+    const task = deepeningTasks[deepeningCurrentTask];
+    console.log('📋 Current task:', task);
+    
+    // Update Stats in Toolbar
+    const statsDiv = document.getElementById('deepeningStats');
+    console.log('Stats div found:', !!statsDiv);
+    if (statsDiv) {
+        statsDiv.style.display = 'block';
+        document.getElementById('currentTask').textContent = deepeningCurrentTask + 1;
+        document.getElementById('totalTasks').textContent = deepeningTasks.length;
+        document.getElementById('correctCount').textContent = deepeningCorrect;
+    }
+    
+    // Zeige Frage
+    const questionDiv = document.getElementById('deepeningQuestion');
+    console.log('Question div found:', !!questionDiv);
+    
+    if (questionDiv) {
+        questionDiv.style.display = 'block';
+        console.log('✅ Question div set to block');
+    }
+    
+    const questionText = document.getElementById('questionText');
+    
+    if (deepeningMode === 'text' || deepeningMode === 'both') {
+        questionText.textContent = task.text;
+        console.log('✅ Question text set:', task.text);
+    }
+    
+    if (deepeningMode === 'audio') {
+        questionText.innerHTML = '🎤 <em>Audio läuft...</em>';
+        const audio = new Audio(URL.createObjectURL(task.audioBlob));
+        audio.play();
+    }
 }
 
 function startDeepeningTasks() {
@@ -628,9 +693,62 @@ function startDeepeningTasks() {
     }
     
     hideModal('taskCountModal');
+    
+    // Filtere Hotspots nach Modus
+    let availableHotspots = [];
+    
+    if (deepeningMode === 'text') {
+        availableHotspots = currentHotspots.filter(h => h.hasText);
+    } else if (deepeningMode === 'audio') {
+        availableHotspots = currentHotspots.filter(h => h.hasAudio);
+    } else if (deepeningMode === 'both') {
+        availableHotspots = currentHotspots.filter(h => h.hasText && h.hasAudio);
+    }
+    
+    if (availableHotspots.length === 0) {
+        alert('Keine Hotspots mit ' + (deepeningMode === 'text' ? 'Text' : deepeningMode === 'audio' ? 'Audio' : 'Text und Audio') + ' vorhanden');
+        return;
+    }
+    
+    // Erstelle Aufgaben (mit Wiederholungen erlaubt)
+    deepeningTasks = [];
+    for (let i = 0; i < count; i++) {
+        const randomIndex = Math.floor(Math.random() * availableHotspots.length);
+        deepeningTasks.push(availableHotspots[randomIndex]);
+    }
+    
+    // Reset Stats
+    deepeningCurrentTask = 0;
+    deepeningCorrect = 0;
+    deepeningWrong = 0;
+    
     console.log('✅ Starting', count, 'tasks in mode:', deepeningMode);
-    alert('Starte ' + count + ' Aufgaben im Modus: ' + deepeningMode);
+    
+    // Zeige erste Aufgabe
+    showNextTask();
 }
+
+function checkDeepeningAnswer(clickedHotspot) {
+    const correctHotspot = deepeningTasks[deepeningCurrentTask];
+    
+    if (clickedHotspot.id === correctHotspot.id) {
+        // Richtig!
+        deepeningCorrect++;
+        // Update Stats sofort
+        document.getElementById('correctCount').textContent = deepeningCorrect;
+    } else {
+        // Falsch! - Zeige richtigen Hotspot
+        deepeningWrong++;
+        canvasManager.highlightHotspot(correctHotspot);
+    }
+    
+    // Nächste Aufgabe nach 1.5 Sekunden
+    setTimeout(() => {
+        deepeningCurrentTask++;
+        showNextTask();
+    }, 1500);
+}
+
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -646,5 +764,6 @@ window.openExercise = openExercise;
 window.canvasManager = canvasManager;
 window.audioRecorder = audioRecorder;
 window.resetAudioDialog = resetAudioDialog;
+window.checkDeepeningAnswer = checkDeepeningAnswer;
 
 console.log('✅ app.js loaded');

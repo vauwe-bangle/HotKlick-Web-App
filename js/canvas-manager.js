@@ -256,21 +256,25 @@ class CanvasManager {
      * Edit-Modus: Hotspot löschen
      * Practice-Modus: Text anzeigen
      */
-    handleSingleClick(coords) {
-        const hotspot = this.findHotspotAt(coords.x, coords.y);
-        
-        if (currentMode === 'edit') {
-            if (hotspot) {
-                // Hotspot gefunden → Löschen
-                this.deleteHotspot(hotspot);
-            }
-            // Kein Hotspot und kein Long-Press → nichts tun
-        } else if (currentMode === 'practice') {
-            if (hotspot) {
-                this.showHotspotText(hotspot);
-            }
+handleSingleClick(coords) {
+    const hotspot = this.findHotspotAt(coords.x, coords.y);
+    
+    if (currentMode === 'edit') {
+        if (hotspot) {
+            this.deleteHotspot(hotspot);
+        }
+    } else if (currentMode === 'practice') {
+        if (hotspot) {
+            this.showHotspotText(hotspot);
+        }
+    } else if (currentMode === 'deepening') {
+        if (hotspot) {
+            window.checkDeepeningAnswer(hotspot);
+        } else {
+            console.log('⚠️ Kein Hotspot getroffen');
         }
     }
+}
 
     /**
      * Double Click Handler
