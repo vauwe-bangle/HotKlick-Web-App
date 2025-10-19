@@ -710,11 +710,11 @@ class CanvasManager {
      * Zeichnet einzelnen Hotspot
      */
     drawHotspot(hotspot) {
-        // Im Practice-Modus: Hotspots NICHT zeichnen (komplett transparent)
-        if (currentMode === 'practice') {
-            console.log(`  👻 Hotspot ${hotspot.label} hidden (practice mode)`);
-            return; // Zeichne nichts im Practice-Modus
-        }
+    // Im Practice- und Deepening-Modus: Hotspots NICHT zeichnen
+    if (currentMode === 'practice' || currentMode === 'deepening') {
+        console.log(`  👻 Hotspot ${hotspot.label} hidden (${currentMode} mode)`);
+        return;
+    }
         
         console.log(`  🔵 Drawing circle at (${hotspot.x}, ${hotspot.y}) with radius ${hotspot.radius}`);
         

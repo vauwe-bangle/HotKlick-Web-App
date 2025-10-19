@@ -64,6 +64,24 @@ function setupEventListeners() {
     document.getElementById('btnDecreaseRadius').addEventListener('click', () => {
         canvasManager.decreaseRadius();
     });
+
+    // Deepening Mode Buttons
+    const btnDeepText = document.getElementById('btnDeepText');
+    const btnDeepAudio = document.getElementById('btnDeepAudio');
+    const btnDeepBoth = document.getElementById('btnDeepBoth');
+    const btnDeepBack = document.getElementById('btnDeepBack');
+    
+    if (btnDeepText) btnDeepText.addEventListener('click', () => startDeepening('text'));
+    if (btnDeepAudio) btnDeepAudio.addEventListener('click', () => startDeepening('audio'));
+    if (btnDeepBoth) btnDeepBoth.addEventListener('click', () => startDeepening('both'));
+    if (btnDeepBack) btnDeepBack.addEventListener('click', () => setMode('practice'));
+
+    // Task Count Dialog
+    const btnCancelTasks = document.getElementById('btnCancelTasks');
+    const btnStartTasks = document.getElementById('btnStartTasks');
+    
+    if (btnCancelTasks) btnCancelTasks.addEventListener('click', () => hideModal('taskCountModal'));
+    if (btnStartTasks) btnStartTasks.addEventListener('click', startDeepeningTasks);
     
     // Save Exercise
     document.getElementById('btnSave').addEventListener('click', saveExercise);
@@ -202,11 +220,21 @@ function handleBack() {
 }
 
 function showModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('✅ Modal shown:', modalId);
+    } else {
+        console.error('❌ Modal not found:', modalId);
+    }
 }
 
 function hideModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        console.log('✅ Modal hidden:', modalId);
+    }
 }
 
 // ============================================
@@ -392,48 +420,46 @@ function getHotspotColor(hotspot) {
 function setMode(mode) {
     currentMode = mode;
     
-    console.log(`🔄 Switching to mode: ${mode}`);
-    
     // Update UI
     document.querySelectorAll('.mode-toggle button').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    // Zeige/Verstecke Radius-Controls
     const radiusControls = document.getElementById('radiusControls');
-    
-    if (!radiusControls) {
-        console.error('❌ Radius controls element not found!');
-        return;
-    }
-    
-    console.log(`📍 Radius controls element found:`, radiusControls);
     
     if (mode === 'edit') {
         document.getElementById('btnEditMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'crosshair';
         radiusControls.classList.remove('hidden');
-        console.log('✅ Radius controls shown (edit mode)');
+        
+        // Verstecke Deepening Controls
+        const deepeningControls = document.getElementById('deepeningControls');
+        if (deepeningControls) deepeningControls.classList.add('hidden');
+        
     } else if (mode === 'practice') {
         document.getElementById('btnPracticeMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'pointer';
         radiusControls.classList.add('hidden');
-        console.log('👻 Radius controls hidden (practice mode)');
+        
+        // Verstecke Deepening Controls
+        const deepeningControls = document.getElementById('deepeningControls');
+        if (deepeningControls) deepeningControls.classList.add('hidden');
+        
     } else if (mode === 'deepening') {
         document.getElementById('btnDeepeningMode').classList.add('active');
-        document.getElementById('drawingCanvas').style.cursor = 'default';
+        document.getElementById('drawingCanvas').style.cursor = 'pointer';
         radiusControls.classList.add('hidden');
-        console.log('👻 Radius controls hidden (deepening mode)');
+        
+        // Zeige Deepening Controls
+        const deepeningControls = document.getElementById('deepeningControls');
+        if (deepeningControls) deepeningControls.classList.remove('hidden');
     }
     
-    // Redraw canvas mit neuer Transparenz
+    // Redraw canvas
     if (currentExercise) {
         canvasManager.redraw();
     }
-    
-    console.log('✅ Mode switched:', mode);
 }
-
 // ============================================
 // CANVAS EVENTS (Placeholder - wird erweitert)
 // ============================================
@@ -580,6 +606,30 @@ function handleAudioFileUpload(e) {
     preview.src = url;
     preview.style.display = 'block';
     preview.load();
+}
+
+// ============================================
+// DEEPENING MODE
+// ============================================
+let deepeningMode = null; // Global am Anfang von app.js
+
+function startDeepening(mode) {
+    deepeningMode = mode;
+    console.log('🎯 Starting deepening mode:', mode);
+    showModal('taskCountModal');
+}
+
+function startDeepeningTasks() {
+    const count = parseInt(document.getElementById('taskCount').value);
+    
+    if (!count || count < 1) {
+        alert('Bitte mindestens 1 Aufgabe eingeben');
+        return;
+    }
+    
+    hideModal('taskCountModal');
+    console.log('✅ Starting', count, 'tasks in mode:', deepeningMode);
+    alert('Starte ' + count + ' Aufgaben im Modus: ' + deepeningMode);
 }
 
 // ============================================

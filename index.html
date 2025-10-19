@@ -55,6 +55,15 @@
                     <span id="radiusDisplay">20px</span>
                     <button class="btn-icon-small" id="btnIncreaseRadius" title="Radius vergrößern">+</button>
                 </div>
+
+                   <!-- Deepening Controls (nur im Deepening-Modus sichtbar) -->
+                <div id="deepeningControls" class="deepening-controls hidden">
+                    <button class="btn-icon-small" id="btnDeepText" title="Zufall-Text">📝</button>
+                    <button class="btn-icon-small" id="btnDeepAudio" title="Zufall-Audio">🎤</button>
+                    <button class="btn-icon-small" id="btnDeepBoth" title="Zufall-Text/Audio">📝🎤</button>
+                    <button class="btn-icon-small" id="btnDeepBack" title="Zurück">←</button>
+                </div>
+
                 
                 <input type="text" id="exerciseName" placeholder="Übungsname..." style="flex: 1; margin: 0;">
                 <button class="btn btn-save-warning" id="btnSave">⚠️ Wichtig - Daten speichern</button>
@@ -65,6 +74,7 @@
         </div>
     </div>
 
+ 
     <!-- New Exercise Dialog -->
     <div class="modal" id="newExerciseModal">
         <div class="modal-content">
@@ -99,6 +109,20 @@
         </div>
     </div>
 
+            <!-- Task Count Dialog -->
+    <div class="modal" id="taskCountModal">
+    <div class="modal-content">
+        <div class="modal-header">Vertiefungsmodus starten</div>
+        <label for="taskCount">Wie viele Aufgaben?</label>
+        <input type="number" id="taskCount" min="1" max="50" value="10" 
+                style="margin-bottom: 16px; font-size: 18px; text-align: center;">
+        <div class="modal-actions">
+            <button class="btn" id="btnCancelTasks">Abbrechen</button>
+            <button class="btn btn-primary" id="btnStartTasks">Starten</button>
+        </div>
+    </div>
+
+
     <!-- Audio Dialog -->
     <div class="modal" id="audioModal">
         <div class="modal-content">
@@ -115,6 +139,7 @@
                         📁 Audio-Datei hochladen
                     </button>
                 </div>
+            </div>
             </div>
             
             <!-- Aufnahme-Bereich (Initial versteckt) -->

@@ -402,6 +402,23 @@ body {
     font-size: 14px;
 }
 
+/* ============================================
+   Deepening Controls
+   ============================================ */
+.deepening-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background-color: var(--white);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 4px;
+    border: 1px solid #E0E0E0;
+}
+
+.deepening-controls.hidden {
+    display: none !important;
+}
+
 .btn-icon-small {
     background-color: var(--primary);
     color: var(--white);
@@ -429,6 +446,7 @@ body {
 /* ============================================
    Modal / Dialog
    ============================================ */
+   
 .modal {
     display: none;
     position: fixed;
@@ -444,7 +462,7 @@ body {
 }
 
 .modal.active {
-    display: flex;
+    display: flex !important;
 }
 
 .modal-content {
