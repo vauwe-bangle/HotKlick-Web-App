@@ -255,26 +255,24 @@ class CanvasManager {
      * Single Click Handler
      * Edit-Modus: Hotspot löschen
      * Practice-Modus: Text anzeigen
+     * Deepening-Modus: Antwort prüfen (auch bei Leer-Klick)
      */
-handleSingleClick(coords) {
-    const hotspot = this.findHotspotAt(coords.x, coords.y);
-    
-    if (currentMode === 'edit') {
-        if (hotspot) {
-            this.deleteHotspot(hotspot);
-        }
-    } else if (currentMode === 'practice') {
-        if (hotspot) {
-            this.showHotspotText(hotspot);
-        }
-    } else if (currentMode === 'deepening') {
-        if (hotspot) {
+    handleSingleClick(coords) {
+        const hotspot = this.findHotspotAt(coords.x, coords.y);
+        
+        if (currentMode === 'edit') {
+            if (hotspot) {
+                this.deleteHotspot(hotspot);
+            }
+        } else if (currentMode === 'practice') {
+            if (hotspot) {
+                this.showHotspotText(hotspot);
+            }
+        } else if (currentMode === 'deepening') {
+            // Prüfe Antwort - auch wenn kein Hotspot getroffen wurde (null)
             window.checkDeepeningAnswer(hotspot);
-        } else {
-            console.log('⚠️ Kein Hotspot getroffen');
         }
     }
-}
 
     /**
      * Double Click Handler
@@ -540,34 +538,6 @@ handleSingleClick(coords) {
     }
 
     /**
-     * Speichert Audio
-     */
-    async saveAudio(audioBlob) {
-        if (!this.selectedHotspot) return;
-
-        this.selectedHotspot.audioBlob = audioBlob;
-        this.selectedHotspot.hasAudio = true;
-
-        try {
-            await db.updateHotspot(this.selectedHotspot);
-            
-            // Update in currentHotspots Array
-            const index = currentHotspots.findIndex(h => h.id === this.selectedHotspot.id);
-            if (index !== -1) {
-                currentHotspots[index] = this.selectedHotspot;
-            }
-            
-            this.redraw();
-            console.log(`✅ Audio saved for hotspot: ${this.selectedHotspot.label}`);
-        } catch (error) {
-            console.error('Failed to save audio:', error);
-            alert('Fehler beim Speichern des Audios');
-        }
-
-        this.selectedHotspot = null;
-    }
-
-    /**
      * Zeigt Hotspot-Text an (Practice-Modus) - OHNE Label
      */
     showHotspotText(hotspot) {
@@ -714,11 +684,11 @@ handleSingleClick(coords) {
      * Zeichnet einzelnen Hotspot
      */
     drawHotspot(hotspot) {
-    // Im Practice- und Deepening-Modus: Hotspots NICHT zeichnen
-    if (currentMode === 'practice' || currentMode === 'deepening') {
-        console.log(`  👻 Hotspot ${hotspot.label} hidden (${currentMode} mode)`);
-        return;
-    }
+        // Im Practice- und Deepening-Modus: Hotspots NICHT zeichnen
+        if (currentMode === 'practice' || currentMode === 'deepening') {
+            console.log(`  👻 Hotspot ${hotspot.label} hidden (${currentMode} mode)`);
+            return;
+        }
         
         console.log(`  🔵 Drawing circle at (${hotspot.x}, ${hotspot.y}) with radius ${hotspot.radius}`);
         
@@ -779,6 +749,49 @@ handleSingleClick(coords) {
             alert('Fehler beim Laden des Bildes');
         };
         img.src = imageData;
+    }
+
+    /**
+     * Hebt Hotspot durch Blinken hervor (für falsche Antworten)
+     */
+    highlightHotspot(hotspot) {
+        console.log('💡 Highlighting hotspot:', hotspot.label);
+        
+        let blinkCount = 0;
+        const maxBlinks = 3;
+        const blinkInterval = 250; // ms
+        
+        const blinkTimer = setInterval(() => {
+            // Toggle zwischen sichtbar und unsichtbar
+            if (blinkCount % 2 === 0) {
+                // Zeichne Hotspot in Rot mit größerem Radius
+                this.ctx.beginPath();
+                this.ctx.arc(hotspot.x, hotspot.y, 10, 0, 2 * Math.PI);
+                // Immer 10px, unabhängig vom Hotspot-Radius
+                this.ctx.fillStyle = 'rgba(244, 67, 54, 0.7)';
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#F44336';
+                this.ctx.lineWidth = 4;
+                this.ctx.stroke();
+                
+                // Label
+                this.ctx.fillStyle = '#FFF';
+                this.ctx.font = 'bold 16px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(hotspot.label, hotspot.x, hotspot.y);
+            } else {
+                // Redraw normal (versteckt den Hotspot wieder)
+                this.redraw();
+            }
+            
+            blinkCount++;
+            
+            if (blinkCount >= maxBlinks * 2) {
+                clearInterval(blinkTimer);
+                this.redraw(); // Zurück zu normalem Zustand
+            }
+        }, blinkInterval);
     }
 }
 

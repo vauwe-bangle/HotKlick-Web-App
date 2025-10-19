@@ -731,16 +731,23 @@ function startDeepeningTasks() {
 function checkDeepeningAnswer(clickedHotspot) {
     const correctHotspot = deepeningTasks[deepeningCurrentTask];
     
-    if (clickedHotspot.id === correctHotspot.id) {
-        // Richtig!
+    if (clickedHotspot && clickedHotspot.id === correctHotspot.id) {
+        // ✅ Richtig!
         deepeningCorrect++;
-        // Update Stats sofort
-        document.getElementById('correctCount').textContent = deepeningCorrect;
-    } else {
-        // Falsch! - Zeige richtigen Hotspot
+        console.log('✅ Correct answer!');
+    } else if (clickedHotspot && clickedHotspot.id !== correctHotspot.id) {
+        // ❌ Falscher Hotspot geklickt - zeige richtigen!
         deepeningWrong++;
+        console.log('❌ Wrong hotspot clicked - showing correct one');
         canvasManager.highlightHotspot(correctHotspot);
+    } else {
+        // ⬜ Leere Stelle geklickt - kein Blinken!
+        deepeningWrong++;
+        console.log('⬜ Empty space clicked - no hint');
     }
+    
+    // Update Stats sofort
+    document.getElementById('correctCount').textContent = deepeningCorrect;
     
     // Nächste Aufgabe nach 1.5 Sekunden
     setTimeout(() => {
@@ -748,7 +755,6 @@ function checkDeepeningAnswer(clickedHotspot) {
         showNextTask();
     }, 1500);
 }
-
 
 // ============================================
 // UTILITY FUNCTIONS
