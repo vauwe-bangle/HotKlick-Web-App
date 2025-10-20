@@ -56,7 +56,7 @@
                     <button class="btn-icon-small" id="btnIncreaseRadius" title="Radius vergrößern">+</button>
                 </div>
 
-                   <!-- Deepening Controls (nur im Deepening-Modus sichtbar) -->
+                <!-- Deepening Controls (nur im Deepening-Modus sichtbar) -->
                 <div id="deepeningControls" class="deepening-controls hidden">
                     <button class="btn-icon-small" id="btnDeepText" title="Zufall-Text">📝</button>
                     <button class="btn-icon-small" id="btnDeepAudio" title="Zufall-Audio">🎤</button>
@@ -69,29 +69,23 @@
                     <strong style="color: #2196F3;">Aufg. <span id="currentTask">1</span>/<span id="totalTasks">10</span></strong>
                     <span style="margin-left: 12px;">✅ <span id="correctCount">0</span></span>
                 </div>
-
                 
                 <input type="text" id="exerciseName" placeholder="Übungsname..." style="flex: 1; margin: 0;">
                 <button class="btn btn-save-warning" id="btnSave">⚠️ Wichtig - Daten speichern</button>
             </div>
+            
             <div class="canvas-container">
                 <canvas id="drawingCanvas" width="1024" height="600"></canvas>
             </div>
 
-                        <!-- Vertiefungsmodus Frage-Bereich HIER! -->
-            <div id="deepeningQuestion" style="height: 100px; padding: 16px; background: #F5F5F5; border-top: 1px solid #E0E0E0; display: none;">
-                <div style="background: white; padding: 16px; border-radius: 4px; font-size: 20px; font-weight: 500; min-height: 68px; display: flex; align-items: center; justify-content: center; border: 2px solid #2196F3;">
+            <!-- Vertiefungsmodus Frage-Bereich -->
+            <div id="deepeningQuestion" style="height: 120px; padding: 16px; background: #F5F5F5; border-top: 1px solid #E0E0E0; display: none;">
+                <div style="background: white; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 500; min-height: 88px; display: flex; align-items: center; justify-content: center; border: 2px solid #2196F3;">
                     <span id="questionText">Wo ist dieser Hotspot?</span>
                 </div>
             </div>
-        </div>
-    </div>
-
-
-                <!-- Vertiefungsmodus Frage-Bereich (feste Höhe) -->
-            </div>
         </div> <!-- Ende canvasScreen -->
-
+    </div> <!-- Ende app-container -->
  
     <!-- New Exercise Dialog -->
     <div class="modal" id="newExerciseModal">
@@ -127,19 +121,19 @@
         </div>
     </div>
 
-            <!-- Task Count Dialog -->
+    <!-- Task Count Dialog -->
     <div class="modal" id="taskCountModal">
-    <div class="modal-content">
-        <div class="modal-header">Vertiefungsmodus starten</div>
-        <label for="taskCount">Wie viele Aufgaben?</label>
-        <input type="number" id="taskCount" min="1" max="50" value="10" 
-                style="margin-bottom: 16px; font-size: 18px; text-align: center;">
-        <div class="modal-actions">
-            <button class="btn" id="btnCancelTasks">Abbrechen</button>
-            <button class="btn btn-primary" id="btnStartTasks">Starten</button>
+        <div class="modal-content">
+            <div class="modal-header">Vertiefungsmodus starten</div>
+            <label for="taskCount">Wie viele Aufgaben?</label>
+            <input type="number" id="taskCount" min="1" max="50" value="10" 
+                    style="margin-bottom: 16px; font-size: 18px; text-align: center;">
+            <div class="modal-actions">
+                <button class="btn" id="btnCancelTasks">Abbrechen</button>
+                <button class="btn btn-primary" id="btnStartTasks">Starten</button>
+            </div>
         </div>
     </div>
-
 
     <!-- Audio Dialog -->
     <div class="modal" id="audioModal">
@@ -157,7 +151,6 @@
                         📁 Audio-Datei hochladen
                     </button>
                 </div>
-            </div>
             </div>
             
             <!-- Aufnahme-Bereich (Initial versteckt) -->

@@ -467,6 +467,7 @@ function setMode(mode) {
         canvasManager.redraw();
     }
 }
+
 // ============================================
 // CANVAS EVENTS (Placeholder - wird erweitert)
 // ============================================
@@ -615,13 +616,11 @@ function handleAudioFileUpload(e) {
     preview.load();
 }
 
-
 function startDeepening(mode) {
     deepeningMode = mode;
     console.log('🎯 Starting deepening mode:', mode);
     showModal('taskCountModal');
 }
-
 
 // ============================================
 // DEEPENING MODE FUNCTIONS
@@ -672,15 +671,60 @@ function showNextTask() {
     
     const questionText = document.getElementById('questionText');
     
-    if (deepeningMode === 'text' || deepeningMode === 'both') {
+    if (deepeningMode === 'text') {
+        // Nur Text anzeigen
         questionText.textContent = task.text;
         console.log('✅ Question text set:', task.text);
-    }
-    
-    if (deepeningMode === 'audio') {
+        
+    } else if (deepeningMode === 'audio') {
+        // Nur Audio abspielen
         questionText.innerHTML = '🎤 <em>Audio läuft...</em>';
-        const audio = new Audio(URL.createObjectURL(task.audioBlob));
-        audio.play();
+        if (task.audioBlob) {
+            const audio = new Audio(URL.createObjectURL(task.audioBlob));
+            audio.play().catch(error => {
+                console.error('❌ Audio playback failed:', error);
+                questionText.innerHTML = '🎤 <em style="color: red;">Audio-Fehler</em>';
+            });
+            console.log('✅ Audio playing');
+        } else {
+            console.error('❌ No audio blob found for task');
+            questionText.innerHTML = '🎤 <em style="color: red;">Kein Audio vorhanden</em>';
+        }
+        
+    } else if (deepeningMode === 'both') {
+        // Text/Audio gemischt - zeige was vorhanden ist
+        const hasText = task.hasText && task.text;
+        const hasAudio = task.hasAudio && task.audioBlob;
+        
+        if (hasText && hasAudio) {
+            // Beide vorhanden → Zeige Text UND spiele Audio
+            questionText.textContent = task.text;
+            console.log('✅ Question text set:', task.text);
+            console.log('▶️ Creating audio from blob...');
+            const audio = new Audio(URL.createObjectURL(task.audioBlob));
+            audio.play().then(() => {
+                console.log('✅ Audio playing (both mode - text+audio)');
+            }).catch(error => {
+                console.error('❌ Audio playback failed:', error);
+            });
+        } else if (hasText) {
+            // Nur Text vorhanden
+            questionText.textContent = task.text;
+            console.log('✅ Question text set (only text available):', task.text);
+        } else if (hasAudio) {
+            // Nur Audio vorhanden
+            questionText.innerHTML = '🎤 <em>Audio läuft...</em>';
+            const audio = new Audio(URL.createObjectURL(task.audioBlob));
+            audio.play().catch(error => {
+                console.error('❌ Audio playback failed:', error);
+                questionText.innerHTML = '🎤 <em style="color: red;">Audio-Fehler</em>';
+            });
+            console.log('✅ Audio playing (only audio available)');
+        } else {
+            // Sollte nicht passieren
+            console.error('⚠️ Task has neither text nor audio!');
+            questionText.innerHTML = '⚠️ <em style="color: red;">Kein Inhalt vorhanden</em>';
+        }
     }
 }
 
@@ -699,14 +743,23 @@ function startDeepeningTasks() {
     
     if (deepeningMode === 'text') {
         availableHotspots = currentHotspots.filter(h => h.hasText);
+        console.log('📝 Filtered for TEXT:', availableHotspots.length, 'hotspots');
     } else if (deepeningMode === 'audio') {
         availableHotspots = currentHotspots.filter(h => h.hasAudio);
+        console.log('🎤 Filtered for AUDIO:', availableHotspots.length, 'hotspots');
     } else if (deepeningMode === 'both') {
-        availableHotspots = currentHotspots.filter(h => h.hasText && h.hasAudio);
+        // ODER-Verknüpfung: Text ODER Audio (nicht AND!)
+        availableHotspots = currentHotspots.filter(h => h.hasText || h.hasAudio);
+        console.log('📝🎤 Filtered for TEXT OR AUDIO:', availableHotspots.length, 'hotspots');
+        
+        // Debug: Zeige Details der gefilterten Hotspots
+        availableHotspots.forEach((h, i) => {
+            console.log(`  ${i+1}. ${h.label}: hasText=${h.hasText}, hasAudio=${h.hasAudio}, audioBlob=${!!h.audioBlob}`);
+        });
     }
     
     if (availableHotspots.length === 0) {
-        alert('Keine Hotspots mit ' + (deepeningMode === 'text' ? 'Text' : deepeningMode === 'audio' ? 'Audio' : 'Text und Audio') + ' vorhanden');
+        alert('Keine Hotspots mit ' + (deepeningMode === 'text' ? 'Text' : deepeningMode === 'audio' ? 'Audio' : 'Text oder Audio') + ' vorhanden');
         return;
     }
     
