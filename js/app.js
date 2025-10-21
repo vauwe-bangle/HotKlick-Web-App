@@ -433,6 +433,7 @@ function setMode(mode) {
     });
     
     const radiusControls = document.getElementById('radiusControls');
+    const questionDiv = document.getElementById('deepeningQuestion');
     
     if (mode === 'edit') {
         document.getElementById('btnEditMode').classList.add('active');
@@ -443,6 +444,9 @@ function setMode(mode) {
         const deepeningControls = document.getElementById('deepeningControls');
         if (deepeningControls) deepeningControls.classList.add('hidden');
         
+        // Frage-Box unsichtbar (behält Platz)
+        if (questionDiv) questionDiv.style.visibility = 'hidden';
+        
     } else if (mode === 'practice') {
         document.getElementById('btnPracticeMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'pointer';
@@ -452,6 +456,9 @@ function setMode(mode) {
         const deepeningControls = document.getElementById('deepeningControls');
         if (deepeningControls) deepeningControls.classList.add('hidden');
         
+        // Frage-Box unsichtbar (behält Platz)
+        if (questionDiv) questionDiv.style.visibility = 'hidden';
+        
     } else if (mode === 'deepening') {
         document.getElementById('btnDeepeningMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'pointer';
@@ -460,6 +467,9 @@ function setMode(mode) {
         // Zeige Deepening Controls
         const deepeningControls = document.getElementById('deepeningControls');
         if (deepeningControls) deepeningControls.classList.remove('hidden');
+        
+        // Frage-Box bereit (unsichtbar bis Aufgaben starten)
+        if (questionDiv) questionDiv.style.visibility = 'hidden';
     }
     
     // Redraw canvas
@@ -629,9 +639,12 @@ function startDeepening(mode) {
 function showFinalResult() {
     const percentage = Math.round((deepeningCorrect / deepeningTasks.length) * 100);
     
-    // Verstecke Stats und Frage
+    // Verstecke Stats und Frage (visibility - Box behält Platz)
     document.getElementById('deepeningStats').style.display = 'none';
-    document.getElementById('deepeningQuestion').style.display = 'none';
+    const questionDiv = document.getElementById('deepeningQuestion');
+    if (questionDiv) {
+        questionDiv.style.visibility = 'hidden';
+    }
     
     alert('🎉 Endergebnis\n\n' + deepeningCorrect + ' von ' + deepeningTasks.length + ' richtig\n' + percentage + '%');
     
@@ -660,13 +673,13 @@ function showNextTask() {
         document.getElementById('correctCount').textContent = deepeningCorrect;
     }
     
-    // Zeige Frage
+    // Zeige Frage (visibility statt display)
     const questionDiv = document.getElementById('deepeningQuestion');
     console.log('Question div found:', !!questionDiv);
     
     if (questionDiv) {
-        questionDiv.style.display = 'block';
-        console.log('✅ Question div set to block');
+        questionDiv.style.visibility = 'visible';
+        console.log('✅ Question div set to visible');
     }
     
     const questionText = document.getElementById('questionText');
