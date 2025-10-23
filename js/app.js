@@ -20,6 +20,49 @@ let deepeningCurrentTask = 0;
 let deepeningCorrect = 0;
 let deepeningWrong = 0;
 
+// Audio Feedback
+let audioContext = null;
+
+// ============================================
+// AUDIO FEEDBACK
+// ============================================
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playBeep(frequency = 800, duration = 100) {
+    initAudioContext();
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration / 1000);
+}
+
+function playClickBeep() {
+    playBeep(600, 50); // Kurzer, tiefer Ton für normalen Click
+}
+
+function playCorrectBeep() {
+    playBeep(1000, 150); // Höherer, längerer Ton für richtige Antwort
+}
+
+function playWrongBeep() {
+    playBeep(400, 200); // Tiefer, längerer Ton für falsche Antwort
+}
+
 // ============================================
 // APP INITIALIZATION
 // ============================================
@@ -89,6 +132,10 @@ function setupEventListeners() {
     
     if (btnCancelTasks) btnCancelTasks.addEventListener('click', () => hideModal('taskCountModal'));
     if (btnStartTasks) btnStartTasks.addEventListener('click', startDeepeningTasks);
+    
+    // Close Text Button (für Übungsmodus)
+    const btnCloseText = document.getElementById('btnCloseText');
+    if (btnCloseText) btnCloseText.addEventListener('click', clearQuestionText);
     
     // Save Exercise
     document.getElementById('btnSave').addEventListener('click', saveExercise);
@@ -214,7 +261,12 @@ function setupEditModeButton() {
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
-    document.getElementById('btnBack').style.display = screenId === 'homeScreen' ? 'none' : 'block';
+    
+    // Zurück-Button nur im Canvas-Screen sichtbar
+    const btnBack = document.getElementById('btnBack');
+    if (btnBack) {
+        btnBack.style.display = screenId === 'canvasScreen' ? 'inline-block' : 'none';
+    }
 }
 
 function handleBack() {
@@ -422,6 +474,19 @@ function getHotspotColor(hotspot) {
 }
 
 // ============================================
+// TEXT DISPLAY (für Übungsmodus)
+// ============================================
+function clearQuestionText() {
+    const questionText = document.getElementById('questionText');
+    const btnClose = document.getElementById('btnCloseText');
+    
+    if (questionText) questionText.textContent = '';
+    if (btnClose) btnClose.style.display = 'none';
+    
+    console.log('✅ Question text cleared');
+}
+
+// ============================================
 // MODE MANAGEMENT
 // ============================================
 function setMode(mode) {
@@ -433,7 +498,10 @@ function setMode(mode) {
     });
     
     const radiusControls = document.getElementById('radiusControls');
-    const questionDiv = document.getElementById('deepeningQuestion');
+    const btnCloseText = document.getElementById('btnCloseText');
+    
+    // Lösche Text beim Modenwechsel
+    clearQuestionText();
     
     if (mode === 'edit') {
         document.getElementById('btnEditMode').classList.add('active');
@@ -444,9 +512,6 @@ function setMode(mode) {
         const deepeningControls = document.getElementById('deepeningControls');
         if (deepeningControls) deepeningControls.classList.add('hidden');
         
-        // Frage-Box unsichtbar (behält Platz)
-        if (questionDiv) questionDiv.style.visibility = 'hidden';
-        
     } else if (mode === 'practice') {
         document.getElementById('btnPracticeMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'pointer';
@@ -456,9 +521,6 @@ function setMode(mode) {
         const deepeningControls = document.getElementById('deepeningControls');
         if (deepeningControls) deepeningControls.classList.add('hidden');
         
-        // Frage-Box unsichtbar (behält Platz)
-        if (questionDiv) questionDiv.style.visibility = 'hidden';
-        
     } else if (mode === 'deepening') {
         document.getElementById('btnDeepeningMode').classList.add('active');
         document.getElementById('drawingCanvas').style.cursor = 'pointer';
@@ -467,9 +529,6 @@ function setMode(mode) {
         // Zeige Deepening Controls
         const deepeningControls = document.getElementById('deepeningControls');
         if (deepeningControls) deepeningControls.classList.remove('hidden');
-        
-        // Frage-Box bereit (unsichtbar bis Aufgaben starten)
-        if (questionDiv) questionDiv.style.visibility = 'hidden';
     }
     
     // Redraw canvas
@@ -639,12 +698,11 @@ function startDeepening(mode) {
 function showFinalResult() {
     const percentage = Math.round((deepeningCorrect / deepeningTasks.length) * 100);
     
-    // Verstecke Stats und Frage (visibility - Box behält Platz)
+    // Verstecke Stats
     document.getElementById('deepeningStats').style.display = 'none';
-    const questionDiv = document.getElementById('deepeningQuestion');
-    if (questionDiv) {
-        questionDiv.style.visibility = 'hidden';
-    }
+    
+    // Lösche Text
+    clearQuestionText();
     
     alert('🎉 Endergebnis\n\n' + deepeningCorrect + ' von ' + deepeningTasks.length + ' richtig\n' + percentage + '%');
     
@@ -673,16 +731,11 @@ function showNextTask() {
         document.getElementById('correctCount').textContent = deepeningCorrect;
     }
     
-    // Zeige Frage (visibility statt display)
-    const questionDiv = document.getElementById('deepeningQuestion');
-    console.log('Question div found:', !!questionDiv);
-    
-    if (questionDiv) {
-        questionDiv.style.visibility = 'visible';
-        console.log('✅ Question div set to visible');
-    }
-    
     const questionText = document.getElementById('questionText');
+    const btnClose = document.getElementById('btnCloseText');
+    
+    // Verstecke Schließen-Button im Vertiefungsmodus
+    if (btnClose) btnClose.style.display = 'none';
     
     if (deepeningMode === 'text') {
         // Nur Text anzeigen
@@ -800,15 +853,18 @@ function checkDeepeningAnswer(clickedHotspot) {
     if (clickedHotspot && clickedHotspot.id === correctHotspot.id) {
         // ✅ Richtig!
         deepeningCorrect++;
+        playCorrectBeep(); // Hoher Ton
         console.log('✅ Correct answer!');
     } else if (clickedHotspot && clickedHotspot.id !== correctHotspot.id) {
         // ❌ Falscher Hotspot geklickt - zeige richtigen!
         deepeningWrong++;
+        playWrongBeep(); // Tiefer Ton
         console.log('❌ Wrong hotspot clicked - showing correct one');
         canvasManager.highlightHotspot(correctHotspot);
     } else {
         // ⬜ Leere Stelle geklickt - kein Blinken!
         deepeningWrong++;
+        playWrongBeep(); // Tiefer Ton
         console.log('⬜ Empty space clicked - no hint');
     }
     
@@ -837,5 +893,8 @@ window.canvasManager = canvasManager;
 window.audioRecorder = audioRecorder;
 window.resetAudioDialog = resetAudioDialog;
 window.checkDeepeningAnswer = checkDeepeningAnswer;
+window.playClickBeep = playClickBeep;
+window.playCorrectBeep = playCorrectBeep;
+window.playWrongBeep = playWrongBeep;
 
 console.log('✅ app.js loaded');

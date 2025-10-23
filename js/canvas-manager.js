@@ -254,7 +254,7 @@ class CanvasManager {
     /**
      * Single Click Handler
      * Edit-Modus: Hotspot löschen
-     * Practice-Modus: Text anzeigen
+     * Practice-Modus: Text anzeigen + Piep
      * Deepening-Modus: Antwort prüfen (auch bei Leer-Klick)
      */
     handleSingleClick(coords) {
@@ -266,6 +266,10 @@ class CanvasManager {
             }
         } else if (currentMode === 'practice') {
             if (hotspot) {
+                // Piep abspielen
+                if (typeof window.playClickBeep === 'function') {
+                    window.playClickBeep();
+                }
                 this.showHotspotText(hotspot);
             }
         } else if (currentMode === 'deepening') {
@@ -538,43 +542,39 @@ class CanvasManager {
     }
 
     /**
-     * Zeigt Hotspot-Text an (Practice-Modus) - OHNE Label
+     * Zeigt Hotspot-Text an (Practice-Modus) - in der Textbox unten
      */
     showHotspotText(hotspot) {
         if (!hotspot.hasText) {
-            alert(`Dieser Hotspot hat keinen Text`);
+            const questionText = document.getElementById('questionText');
+            const btnClose = document.getElementById('btnCloseText');
+            
+            if (questionText) questionText.textContent = 'Dieser Hotspot hat keinen Text';
+            if (btnClose) btnClose.style.display = 'block';
+            
+            // Automatisch nach 2 Sekunden ausblenden
+            setTimeout(() => {
+                if (questionText.textContent === 'Dieser Hotspot hat keinen Text') {
+                    questionText.textContent = '';
+                    if (btnClose) btnClose.style.display = 'none';
+                }
+            }, 2000);
             return;
         }
 
-        // Konvertiere URLs in klickbare Links
-        const textWithLinks = this.convertLinksToHtml(hotspot.text);
-
-        // Erstelle Overlay für Text-Anzeige (ohne Label)
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            max-width: 400px;
-            z-index: 2000;
-        `;
+        // Zeige Text in der Textbox
+        const questionText = document.getElementById('questionText');
+        const btnClose = document.getElementById('btnCloseText');
         
-        overlay.innerHTML = `
-            <div style="margin: 0; line-height: 1.6;">${textWithLinks}</div>
-            <button onclick="this.parentElement.remove()" 
-                    style="margin-top: 16px; padding: 8px 16px; 
-                           background: #2196F3; color: white; border: none; 
-                           border-radius: 4px; cursor: pointer;">
-                Schließen
-            </button>
-        `;
+        if (questionText) {
+            // Konvertiere URLs in klickbare Links
+            const textWithLinks = this.convertLinksToHtml(hotspot.text);
+            questionText.innerHTML = textWithLinks;
+        }
         
-        document.body.appendChild(overlay);
+        if (btnClose) btnClose.style.display = 'block';
+        
+        console.log('✅ Text shown in question box:', hotspot.text);
     }
 
     /**
@@ -764,10 +764,9 @@ class CanvasManager {
         const blinkTimer = setInterval(() => {
             // Toggle zwischen sichtbar und unsichtbar
             if (blinkCount % 2 === 0) {
-                // Zeichne Hotspot in Rot mit größerem Radius
+                // Zeichne Hotspot in Rot mit minimalem Radius (10px)
                 this.ctx.beginPath();
                 this.ctx.arc(hotspot.x, hotspot.y, 10, 0, 2 * Math.PI);
-                // Immer 10px, unabhängig vom Hotspot-Radius
                 this.ctx.fillStyle = 'rgba(244, 67, 54, 0.7)';
                 this.ctx.fill();
                 this.ctx.strokeStyle = '#F44336';

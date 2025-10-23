@@ -76,7 +76,7 @@ body {
    Main Container
    ============================================ */
 .app-container {
-    height: calc(100vh - 56px);
+    height: 100vh;
     display: flex;
     flex-direction: column;
 }

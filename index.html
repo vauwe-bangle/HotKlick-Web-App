@@ -14,17 +14,8 @@
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <!-- App Header -->
-    <div class="app-header">
-        <div class="app-title">HotKlick</div>
-        <div class="header-actions">
-            <button class="btn-icon" id="btnBack" style="display: none;" title="Zurück">←</button>
-            <button class="btn-icon" id="btnMenu" title="Menü">⋮</button>
-        </div>
-    </div>
-
     <!-- Main App Container -->
-    <div class="app-container">
+    <div class="app-container" style="height: 100vh;">
         <!-- Home Screen -->
         <div class="screen active" id="homeScreen">
             <div class="home-screen">
@@ -47,6 +38,7 @@
                     <button id="btnPracticeMode" class="active">Übungsmodus</button>
                     <button id="btnDeepeningMode">Vertiefungsmodus</button>
                     <button id="btnEditMode">Editiermodus</button>
+                    <button class="btn" id="btnBack" title="Zurück zur Übersicht" style="margin-left: 8px;">← Zurück</button>
                 </div>
                 
                 <!-- Radius Controls (nur im Edit-Modus sichtbar) -->
@@ -78,10 +70,11 @@
                 <canvas id="drawingCanvas" width="1024" height="600"></canvas>
             </div>
 
-            <!-- Vertiefungsmodus Frage-Bereich (immer Platz reserviert, nur Inhalt wird sichtbar/unsichtbar) -->
-            <div id="deepeningQuestion" style="height: 120px; padding: 16px; background: #F5F5F5; border-top: 1px solid #E0E0E0; visibility: hidden;">
-                <div style="background: white; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 500; min-height: 88px; display: flex; align-items: center; justify-content: center; border: 2px solid #2196F3;">
-                    <span id="questionText">Wo ist dieser Hotspot?</span>
+            <!-- Text-/Frage-Bereich (für Übungsmodus und Vertiefungsmodus) -->
+            <div id="deepeningQuestion" style="height: 120px; padding: 16px; background: #F5F5F5; border-top: 1px solid #E0E0E0;">
+                <div style="background: white; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 500; min-height: 88px; display: flex; align-items: center; justify-content: center; border: 2px solid #2196F3; position: relative;">
+                    <span id="questionText" style="flex: 1; text-align: center;"></span>
+                    <button id="btnCloseText" style="position: absolute; top: 8px; right: 8px; background: #F44336; color: white; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; font-size: 14px; display: none;">Schließen</button>
                 </div>
             </div>
         </div> <!-- Ende canvasScreen -->
