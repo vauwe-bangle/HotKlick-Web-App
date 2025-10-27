@@ -48,15 +48,38 @@ class CanvasManager {
         this.canvas.addEventListener('dblclick', (e) => e.preventDefault());
         
         // Touch support for mobile
+        // Touch support for mobile - WITH ERROR HANDLING
         this.canvas.addEventListener('touchstart', (e) => {
             console.log('📱 Touch start detected');
-            this.handleTouchStart(e);
+            console.log('   About to call handleTouchStart...');
+            console.log('   this.handleTouchStart exists?', typeof this.handleTouchStart);
+            try {
+                this.handleTouchStart(e);
+                console.log('   handleTouchStart completed');
+            } catch (error) {
+                console.error('❌ ERROR in handleTouchStart:', error);
+                console.error('   Error stack:', error.stack);
+            }
         });
         this.canvas.addEventListener('touchend', (e) => {
             console.log('📱 Touch end detected');
-            this.handleTouchEnd(e);
+            console.log('   About to call handleTouchEnd...');
+            console.log('   this.handleTouchEnd exists?', typeof this.handleTouchEnd);
+            try {
+                this.handleTouchEnd(e);
+                console.log('   handleTouchEnd completed');
+            } catch (error) {
+                console.error('❌ ERROR in handleTouchEnd:', error);
+                console.error('   Error stack:', error.stack);
+            }
         });
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        this.canvas.addEventListener('touchmove', (e) => {
+            try {
+                this.handleTouchMove(e);
+            } catch (error) {
+                console.error('❌ ERROR in handleTouchMove:', error);
+            }
+        });
         this.canvas.addEventListener('touchcancel', (e) => this.cancelLongPress());
         
         console.log('✅ Canvas events setup complete');
@@ -139,13 +162,19 @@ class CanvasManager {
      */
     handleTouchStart(e) {
         e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('📱 Touch start');
         const touch = e.touches[0];
         const coords = this.getTouchCoordinates(touch);
+        console.log(`   Coords: (${coords.x}, ${coords.y}), Mode: ${currentMode}`);
+        
         this.pressStartCoords = coords;
         this.longPressTriggered = false;
         
         // Starte Long-Press Timer
         this.longPressTimer = setTimeout(() => {
+            console.log('✅ Long-press triggered');
             this.handleLongPress(coords);
         }, this.LONG_PRESS_DELAY);
     }
@@ -155,29 +184,49 @@ class CanvasManager {
      */
     handleTouchEnd(e) {
         e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('📱 Touch end');
+        console.log('   Step 1: Canceling long-press timer');
         this.cancelLongPress();
         
+        console.log('   Step 2: Check longPressTriggered =', this.longPressTriggered);
         if (this.longPressTriggered) {
+            console.log('   ⚠️ Long-press was active, skipping tap detection');
+            this.pressStartCoords = null; // Reset auch hier
             return;
         }
         
-        if (!this.pressStartCoords) return;
+        console.log('   Step 3: Check pressStartCoords =', this.pressStartCoords);
+        if (!this.pressStartCoords) {
+            console.log('   ⚠️ No pressStartCoords - EXITING');
+            return;
+        }
         
         const coords = this.pressStartCoords;
         const now = Date.now();
+        const timeDiff = now - this.lastClickTime;
         
-        // Doppel-Tap Erkennung
-        if (now - this.lastClickTime < this.DOUBLE_CLICK_DELAY) {
+        console.log(`   Step 4: Time since last tap: ${timeDiff}ms`);
+        console.log(`   Step 5: DOUBLE_CLICK_DELAY = ${this.DOUBLE_CLICK_DELAY}ms`);
+        
+        // Doppel-Tap Erkennung (mit Mindestabstand gegen zu schnelle Doppeltaps)
+        if (timeDiff < this.DOUBLE_CLICK_DELAY && timeDiff > 50) {
             this.clickCount++;
+            console.log(`   👆👆 Double-tap detected! Count: ${this.clickCount}`);
         } else {
             this.clickCount = 1;
+            console.log('   👆 Single tap');
         }
         
         this.lastClickTime = now;
         
+        console.log('   Step 6: Clearing existing timeout');
         clearTimeout(this.clickTimeout);
         
+        console.log(`   Step 7: Setting timeout of ${this.DOUBLE_CLICK_DELAY}ms`);
         this.clickTimeout = setTimeout(() => {
+            console.log(`   🎯 Timeout fired! Final action: ${this.clickCount === 1 ? 'SINGLE' : 'DOUBLE'} tap`);
             if (this.clickCount === 1) {
                 this.handleSingleClick(coords);
             } else if (this.clickCount >= 2) {
@@ -185,6 +234,11 @@ class CanvasManager {
             }
             this.clickCount = 0;
         }, this.DOUBLE_CLICK_DELAY);
+        
+        // Reset pressStartCoords NACH dem Speichern von coords
+        this.pressStartCoords = null;
+        
+        console.log('   ✅ Touch end handler complete');
     }
 
     /**
@@ -212,7 +266,7 @@ class CanvasManager {
             clearTimeout(this.longPressTimer);
             this.longPressTimer = null;
         }
-        this.pressStartCoords = null;
+        // NICHT hier pressStartCoords löschen - wird in handleTouchEnd gemacht
     }
 
     /**
