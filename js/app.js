@@ -9,6 +9,7 @@
 const db = new Database();
 const canvasManager = new CanvasManager();
 const audioRecorder = new AudioRecorder();
+const exportImportManager = new ExportImportManager();
 let currentExercise = null;
 let currentHotspots = [];
 let currentMode = 'edit'; // 'edit', 'practice', 'deepening'
@@ -92,6 +93,9 @@ function setupEventListeners() {
     // Navigation
     document.getElementById('btnBack').addEventListener('click', handleBack);
     document.getElementById('btnNewExercise').addEventListener('click', () => showModal('newExerciseModal'));
+    
+    // Export/Import Manager
+    exportImportManager.setupEventListeners();
     
     // New Exercise Dialog
     document.getElementById('btnCancelNewExercise').addEventListener('click', () => {
