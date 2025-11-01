@@ -41,6 +41,12 @@
                     <button class="btn" id="btnBack" title="Zurück zur Übersicht" style="margin-left: 8px;">← Zurück</button>
                 </div>
                 
+                <!-- Export/Import Controls -->
+                <div id="exportImportControls" class="export-import-controls">
+                    <button class="btn btn-secondary" id="btnExport" title="Übung exportieren">📦 Export</button>
+                    <button class="btn btn-primary" id="btnImport" title="Übung importieren">📥 Import</button>
+                </div>
+                
                 <!-- Radius Controls (nur im Edit-Modus sichtbar) -->
                 <div id="radiusControls" class="radius-controls hidden">
                     <button class="btn-icon-small" id="btnDecreaseRadius" title="Radius verkleinern">−</button>
@@ -71,10 +77,10 @@
             </div>
 
             <!-- Text-/Frage-Bereich (für Übungsmodus und Vertiefungsmodus) -->
-            <div id="deepeningQuestion">
-                <div>
-                    <span id="questionText"></span>
-                    <button id="btnCloseText">Schließen</button>
+            <div id="deepeningQuestion" style="height: 120px; padding: 16px; background: #F5F5F5; border-top: 1px solid #E0E0E0;">
+                <div style="background: white; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 500; min-height: 88px; display: flex; align-items: center; justify-content: center; border: 2px solid #2196F3; position: relative;">
+                    <span id="questionText" style="flex: 1; text-align: center;"></span>
+                    <button id="btnCloseText" style="position: absolute; top: 8px; right: 8px; background: #F44336; color: white; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; font-size: 14px; display: none;">Schließen</button>
                 </div>
             </div>
         </div> <!-- Ende canvasScreen -->
