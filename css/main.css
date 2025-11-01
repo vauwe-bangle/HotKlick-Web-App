@@ -87,12 +87,17 @@ body {
 .screen {
     display: none;
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .screen.active {
     display: flex;
     flex-direction: column;
+}
+
+/* Canvas Screen hat spezielles Layout */
+#canvasScreen {
+    overflow: hidden;
 }
 
 /* ============================================
@@ -199,7 +204,7 @@ body {
     overflow: hidden;
     padding: 8px;
     min-height: 0;
-    max-height: calc(100vh - 200px);
+    /* Canvas nimmt verfügbaren Platz, aber lässt Raum für Textbox */
 }
 
 #drawingCanvas {
@@ -598,6 +603,18 @@ label {
         bottom: var(--spacing-lg);
         right: var(--spacing-lg);
     }
+    
+    /* Kleinere Textbox auf Mobile */
+    #deepeningQuestion {
+        height: 120px;
+        padding: 8px 12px;
+    }
+    
+    #deepeningQuestion > div {
+        padding: 12px;
+        font-size: 14px;
+        min-height: 60px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -618,9 +635,8 @@ label {
    ============================================ */
 #deepeningQuestion {
     flex-shrink: 0;
-    min-height: 70px;
-    max-height: 110px;
-    padding: 8px 12px;
+    height: 140px;
+    padding: 12px 16px;
     background: #F5F5F5;
     border-top: 1px solid #E0E0E0;
     overflow-y: auto;
@@ -628,11 +644,11 @@ label {
 
 #deepeningQuestion > div {
     background: white;
-    padding: 12px;
+    padding: 16px;
     border-radius: 4px;
     font-size: 16px;
     font-weight: 500;
-    min-height: 46px;
+    min-height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;

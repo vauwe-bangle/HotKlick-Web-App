@@ -92,7 +92,9 @@ function playWrongBeep() {
 function setupEventListeners() {
     // Navigation
     document.getElementById('btnBack').addEventListener('click', handleBack);
-    document.getElementById('btnNewExercise').addEventListener('click', () => showModal('newExerciseModal'));
+    
+    // New Exercise Button mit Long-Press für Import
+    setupNewExerciseButton();
     
     // Export/Import Manager
     exportImportManager.setupEventListeners();
@@ -256,6 +258,82 @@ function setupEditModeButton() {
     
     btnEdit.addEventListener('touchcancel', () => {
         clearTimeout(editModeTimer);
+    });
+}
+
+// ============================================
+// NEW EXERCISE BUTTON (Long-Press für Import)
+// ============================================
+let newExerciseTimer = null;
+let newExerciseLongPressTriggered = false;
+
+function setupNewExerciseButton() {
+    const btnNew = document.getElementById('btnNewExercise');
+    
+    // Mouse Events
+    btnNew.addEventListener('mousedown', () => {
+        newExerciseLongPressTriggered = false;
+        console.log('🖱️ + Button pressed - waiting 800ms for import...');
+        
+        newExerciseTimer = setTimeout(() => {
+            console.log('✅ Long-press on + button detected! Opening import...');
+            newExerciseLongPressTriggered = true;
+            
+            // Öffne Import-Dialog
+            exportImportManager.handleImport();
+            
+            // Visuelles Feedback
+            btnNew.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btnNew.style.transform = 'scale(1)';
+            }, 100);
+        }, 800);
+    });
+    
+    btnNew.addEventListener('mouseup', () => {
+        clearTimeout(newExerciseTimer);
+        if (!newExerciseLongPressTriggered) {
+            console.log('👆 Normal click on + button - showing new exercise dialog');
+            showModal('newExerciseModal');
+        }
+    });
+    
+    btnNew.addEventListener('mouseleave', () => {
+        clearTimeout(newExerciseTimer);
+    });
+    
+    // Touch Events
+    btnNew.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        newExerciseLongPressTriggered = false;
+        console.log('📱 + Button touched - waiting 800ms for import...');
+        
+        newExerciseTimer = setTimeout(() => {
+            console.log('✅ Long-press on + button detected! Opening import...');
+            newExerciseLongPressTriggered = true;
+            
+            // Öffne Import-Dialog
+            exportImportManager.handleImport();
+            
+            // Visuelles Feedback
+            btnNew.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btnNew.style.transform = 'scale(1)';
+            }, 100);
+        }, 800);
+    });
+    
+    btnNew.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        clearTimeout(newExerciseTimer);
+        if (!newExerciseLongPressTriggered) {
+            console.log('👆 Normal tap on + button - showing new exercise dialog');
+            showModal('newExerciseModal');
+        }
+    });
+    
+    btnNew.addEventListener('touchcancel', () => {
+        clearTimeout(newExerciseTimer);
     });
 }
 
