@@ -135,23 +135,37 @@ class ExportImportManager {
     }
 
     /**
-     * Bereitet Hotspots für Export vor (Android-Format)
+     * Bereitet Hotspots für Export vor (Android-Format mit relativen Koordinaten)
      */
     async prepareHotspotsForExport(hotspots, imageFilename) {
         const exportData = [];
         let audioCounter = 1;
 
+        // WICHTIG: Hole AKTUELLE Canvas-Dimensionen (nicht die festen 1024x600!)
+        const canvas = document.getElementById('drawingCanvas');
+        const canvasWidth = canvas.width;   // Tatsächliche Breite (z.B. 2048)
+        const canvasHeight = canvas.height; // Tatsächliche Höhe (z.B. 1536)
+        
+        console.log(`📏 Export: Canvas dimensions: ${canvasWidth}x${canvasHeight}`);
+
         for (const hotspot of hotspots) {
             const audioUri = hotspot.audioBlob ? `audio_${audioCounter}.webm` : '';
             if (hotspot.audioBlob) audioCounter++;
+
+            // Konvertiere zu relativen Koordinaten (0.0 - 1.0)
+            const relativeX = hotspot.x / canvasWidth;
+            const relativeY = hotspot.y / canvasHeight;
+            const relativeRadius = hotspot.radius / canvasWidth; // Radius relativ zur Breite
+
+            console.log(`📍 Export ${hotspot.label}: absolute(${hotspot.x}, ${hotspot.y}) → relative(${relativeX.toFixed(4)}, ${relativeY.toFixed(4)})`);
 
             // Android PointEntity Format
             exportData.push({
                 id: hotspot.id,
                 name: hotspot.label, // Android nutzt "name" statt "label"
-                x: Math.round(hotspot.x),
-                y: Math.round(hotspot.y),
-                radius: hotspot.radius,
+                x: relativeX,
+                y: relativeY,
+                radius: relativeRadius,
                 imageUri: imageFilename,
                 text: hotspot.text || '',
                 audioUri: audioUri,
@@ -228,6 +242,20 @@ class ExportImportManager {
             throw new Error('Übungsbild nicht gefunden: ' + imageFilename);
         }
 
+        // 3b. Lade Bild ins Canvas um die ECHTEN Dimensionen zu bekommen
+        await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.getElementById('drawingCanvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                console.log(`📏 Import: Image loaded, canvas resized to ${img.width}x${img.height}`);
+                resolve();
+            };
+            img.onerror = () => reject(new Error('Fehler beim Laden des Bildes'));
+            img.src = imageData;
+        });
+
         // 4. Erstelle neue Übung in DB
         const exerciseName = metadata?.exerciseName || hotspotsData[0]?.exerciseName || 'Importierte Übung';
         const newExercise = {
@@ -244,6 +272,13 @@ class ExportImportManager {
         // 5. Lade Audio-Dateien und erstelle Hotspots
         const importedHotspots = [];
         
+        // Hole Canvas-Dimensionen für Koordinaten-Konvertierung
+        const canvas = document.getElementById('drawingCanvas');
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        
+        console.log(`📏 Import: Target canvas dimensions: ${canvasWidth}x${canvasHeight}`);
+        
         for (const hotspotData of hotspotsData) {
             // Lade Audio falls vorhanden
             let audioBlob = null;
@@ -252,14 +287,23 @@ class ExportImportManager {
                 console.log(`✅ Audio loaded: ${hotspotData.audioUri}`);
             }
 
+            // Konvertiere relative Koordinaten (0.0-1.0) zu absoluten Pixel-Werten
+            // Falls Werte > 1.0 sind, handelt es sich um alte absolute Werte (Rückwärtskompatibilität)
+            const isRelative = hotspotData.x <= 1.0 && hotspotData.y <= 1.0;
+            const absoluteX = isRelative ? hotspotData.x * canvasWidth : hotspotData.x;
+            const absoluteY = isRelative ? hotspotData.y * canvasHeight : hotspotData.y;
+            const absoluteRadius = isRelative ? hotspotData.radius * canvasWidth : hotspotData.radius;
+
+            console.log(`📍 Import ${hotspotData.name}: relative(${hotspotData.x.toFixed(4)}, ${hotspotData.y.toFixed(4)}) → absolute(${Math.round(absoluteX)}, ${Math.round(absoluteY)})`);
+
             // Erstelle Hotspot
             const newHotspot = {
                 id: db.generateId(), // Neue ID generieren für diese Datenbank
                 exerciseId: newExercise.id,
                 label: hotspotData.name, // Android nutzt "name"
-                x: hotspotData.x,
-                y: hotspotData.y,
-                radius: hotspotData.radius,
+                x: absoluteX,
+                y: absoluteY,
+                radius: absoluteRadius,
                 text: hotspotData.text || '',
                 audioBlob: audioBlob,
                 hasText: (hotspotData.text && hotspotData.text.trim() !== '') || hotspotData.hasText || false,
@@ -268,7 +312,6 @@ class ExportImportManager {
 
             await db.addHotspot(newHotspot);
             importedHotspots.push(newHotspot);
-            console.log(`✅ Hotspot imported: ${newHotspot.label}`);
         }
 
         console.log('✅ Import completed:', importedHotspots.length, 'hotspots');
