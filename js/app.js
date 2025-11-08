@@ -93,8 +93,34 @@ function setupEventListeners() {
     // Navigation
     document.getElementById('btnBack').addEventListener('click', handleBack);
     
-    // New Exercise Button mit Long-Press für Import
-    setupNewExerciseButton();
+    // New Exercise Button
+    document.getElementById('btnNewExercise').addEventListener('click', () => {
+        showModal('newExerciseModal');
+    });
+    
+    // Import from Dialog
+    document.getElementById('btnImportFromDialog').addEventListener('click', () => {
+        hideModal('newExerciseModal');
+        exportImportManager.handleImport();
+    });
+    
+    // Export/Import Buttons (in Canvas)
+    const btnExport = document.getElementById('btnExport');
+    const btnImport = document.getElementById('btnImport');
+    if (btnExport) {
+        btnExport.addEventListener('click', () => {
+            if (currentExercise) {
+                exportImportManager.handleExport(currentExercise, currentHotspots);
+            } else {
+                alert('Keine Übung geladen');
+            }
+        });
+    }
+    if (btnImport) {
+        btnImport.addEventListener('click', () => {
+            exportImportManager.handleImport();
+        });
+    }
     
     // Export/Import Manager
     exportImportManager.setupEventListeners();
@@ -262,82 +288,6 @@ function setupEditModeButton() {
 }
 
 // ============================================
-// NEW EXERCISE BUTTON (Long-Press für Import)
-// ============================================
-let newExerciseTimer = null;
-let newExerciseLongPressTriggered = false;
-
-function setupNewExerciseButton() {
-    const btnNew = document.getElementById('btnNewExercise');
-    
-    // Mouse Events
-    btnNew.addEventListener('mousedown', () => {
-        newExerciseLongPressTriggered = false;
-        console.log('🖱️ + Button pressed - waiting 800ms for import...');
-        
-        newExerciseTimer = setTimeout(() => {
-            console.log('✅ Long-press on + button detected! Opening import...');
-            newExerciseLongPressTriggered = true;
-            
-            // Öffne Import-Dialog
-            exportImportManager.handleImport();
-            
-            // Visuelles Feedback
-            btnNew.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                btnNew.style.transform = 'scale(1)';
-            }, 100);
-        }, 800);
-    });
-    
-    btnNew.addEventListener('mouseup', () => {
-        clearTimeout(newExerciseTimer);
-        if (!newExerciseLongPressTriggered) {
-            console.log('👆 Normal click on + button - showing new exercise dialog');
-            showModal('newExerciseModal');
-        }
-    });
-    
-    btnNew.addEventListener('mouseleave', () => {
-        clearTimeout(newExerciseTimer);
-    });
-    
-    // Touch Events
-    btnNew.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        newExerciseLongPressTriggered = false;
-        console.log('📱 + Button touched - waiting 800ms for import...');
-        
-        newExerciseTimer = setTimeout(() => {
-            console.log('✅ Long-press on + button detected! Opening import...');
-            newExerciseLongPressTriggered = true;
-            
-            // Öffne Import-Dialog
-            exportImportManager.handleImport();
-            
-            // Visuelles Feedback
-            btnNew.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                btnNew.style.transform = 'scale(1)';
-            }, 100);
-        }, 800);
-    });
-    
-    btnNew.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        clearTimeout(newExerciseTimer);
-        if (!newExerciseLongPressTriggered) {
-            console.log('👆 Normal tap on + button - showing new exercise dialog');
-            showModal('newExerciseModal');
-        }
-    });
-    
-    btnNew.addEventListener('touchcancel', () => {
-        clearTimeout(newExerciseTimer);
-    });
-}
-
-// ============================================
 // SCREEN MANAGEMENT
 // ============================================
 function showScreen(screenId) {
@@ -408,13 +358,46 @@ async function loadExercises() {
             });
             
             return `
-                <div class="exercise-card" onclick="openExercise('${ex.id}')">
+                <div class="exercise-card" data-id="${ex.id}">
                     <img src="${ex.imageData}" alt="${ex.name}">
                     <div class="exercise-name">${escapeHtml(ex.name)}</div>
                     <div class="exercise-meta">${date}</div>
+                    <button class="delete-btn" data-id="${ex.id}" title="Übung löschen">🗑️</button>
                 </div>
             `;
         }).join('');
+        
+        // Click-Handler für Übungskarten
+        document.querySelectorAll('.exercise-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Wenn Delete-Button geklickt, ignoriere Card-Click
+                if (e.target.classList.contains('delete-btn')) {
+                    return;
+                }
+                const exerciseId = this.dataset.id;
+                openExercise(exerciseId);
+            });
+        });
+        
+        // Click-Handler für Delete-Buttons
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation(); // Verhindere Card-Click
+                const exerciseId = this.dataset.id;
+                const exercise = exercises.find(ex => ex.id === exerciseId);
+                
+                if (exercise && confirm(`Möchtest du "${exercise.name}" wirklich löschen?`)) {
+                    try {
+                        await db.deleteExercise(exerciseId);
+                        await loadExercises();
+                        console.log(`🗑️ Deleted exercise: ${exerciseId}`);
+                    } catch (error) {
+                        console.error('Failed to delete exercise:', error);
+                        alert('Fehler beim Löschen der Übung');
+                    }
+                }
+            });
+        });
         
         console.log(`✅ Loaded ${exercises.length} exercises`);
     } catch (error) {
